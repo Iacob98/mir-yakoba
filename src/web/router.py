@@ -474,8 +474,8 @@ async def admin_update_access_level(
     user_service = UserService(db)
 
     try:
-        level = AccessLevel(access_level)
-    except ValueError:
+        level = AccessLevel(int(access_level))
+    except (ValueError, KeyError):
         raise HTTPException(status_code=400, detail="Неверный уровень доступа")
 
     from uuid import UUID
