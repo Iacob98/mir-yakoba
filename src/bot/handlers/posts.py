@@ -195,6 +195,9 @@ async def process_content_voice(message: Message, state: FSMContext, bot: Bot):
         await message.answer("❌ Не удалось распознать речь в сообщении.")
         return
 
+    # Format transcription with AI
+    text = await transcription_service.format_transcription(text)
+
     # Save audio immediately to avoid storing bytes in Redis
     async with get_db_context() as db:
         auth_service = AuthService(db)
@@ -277,6 +280,9 @@ async def process_content_video_note(message: Message, state: FSMContext, bot: B
     if not text or not text.strip():
         await message.answer("❌ Не удалось распознать речь в видео.")
         return
+
+    # Format transcription with AI
+    text = await transcription_service.format_transcription(text)
 
     # Save video immediately to avoid storing bytes in Redis
     async with get_db_context() as db:
@@ -365,6 +371,9 @@ async def process_content_audio_file(message: Message, state: FSMContext, bot: B
         await message.answer("❌ Не удалось распознать речь в аудио.")
         return
 
+    # Format transcription with AI
+    text = await transcription_service.format_transcription(text)
+
     # Save audio immediately to avoid storing bytes in Redis
     async with get_db_context() as db:
         auth_service = AuthService(db)
@@ -448,6 +457,9 @@ async def process_content_video_file(message: Message, state: FSMContext, bot: B
     if not text or not text.strip():
         await message.answer("❌ Не удалось распознать речь в видео.")
         return
+
+    # Format transcription with AI
+    text = await transcription_service.format_transcription(text)
 
     # Save video immediately to avoid storing bytes in Redis
     async with get_db_context() as db:
