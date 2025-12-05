@@ -1,46 +1,46 @@
 {% if posts %}
 <div class="space-y-6">
     {% for post in posts %}
-    <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition">
-        {% if post.featured_image %}
-        <img src="{{ post.featured_image }}"
-             alt="{{ post.title }}"
-             class="w-full h-48 object-cover">
-        {% endif %}
-
-        <div class="p-4 sm:p-6">
-            <div class="flex flex-wrap gap-2 mb-2">
-                {% if post.is_pinned %}
-                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
-                    📌 Закреплено
-                </span>
-                {% endif %}
-                {% if post.visibility.value != 'public' %}
-                <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
-                    {% if post.visibility.value == 'premium_2' %}bg-purple-100 text-purple-800
-                    {% elif post.visibility.value == 'premium_1' %}bg-blue-100 text-blue-800
-                    {% else %}bg-gray-100 text-gray-800{% endif %}">
-                    {{ post.visibility.value | replace('_', ' ') | title }}
-                </span>
-                {% endif %}
-            </div>
-
-            <h2 class="text-xl font-bold mb-2">
-                <a href="/posts/{{ post.slug }}" class="hover:text-blue-600 transition">
-                    {{ post.title }}
-                </a>
-            </h2>
-
-            {% if post.excerpt %}
-            <p class="text-gray-600 mb-4">{{ post.excerpt }}</p>
+    <a href="/posts/{{ post.slug }}" class="block">
+        <article class="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition cursor-pointer">
+            {% if post.featured_image %}
+            <img src="{{ post.featured_image }}"
+                 alt="{{ post.title }}"
+                 class="w-full h-48 object-cover">
             {% endif %}
 
-            <div class="flex items-center justify-between text-sm text-gray-500">
-                <span>{% if post.published_at %}{{ post.published_at.strftime('%d.%m.%Y') }}{% else %}Черновик{% endif %}</span>
-                <span>{{ post.view_count }} просмотров</span>
+            <div class="p-4 sm:p-6">
+                <div class="flex flex-wrap gap-2 mb-2">
+                    {% if post.is_pinned %}
+                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full bg-yellow-100 text-yellow-800">
+                        📌 Закреплено
+                    </span>
+                    {% endif %}
+                    {% if post.visibility.value != 'public' %}
+                    <span class="inline-block px-2 py-1 text-xs font-semibold rounded-full
+                        {% if post.visibility.value == 'premium_2' %}bg-purple-100 text-purple-800
+                        {% elif post.visibility.value == 'premium_1' %}bg-blue-100 text-blue-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ post.visibility.value | replace('_', ' ') | title }}
+                    </span>
+                    {% endif %}
+                </div>
+
+                <h2 class="text-xl font-bold mb-2 hover:text-blue-600 transition">
+                    {{ post.title }}
+                </h2>
+
+                {% if post.excerpt %}
+                <p class="text-gray-600 mb-4">{{ post.excerpt }}</p>
+                {% endif %}
+
+                <div class="flex items-center justify-between text-sm text-gray-500">
+                    <span>{% if post.published_at %}{{ post.published_at.strftime('%d.%m.%Y') }}{% else %}Черновик{% endif %}</span>
+                    <span>{{ post.view_count }} просмотров</span>
+                </div>
             </div>
-        </div>
-    </article>
+        </article>
+    </a>
     {% endfor %}
 </div>
 
