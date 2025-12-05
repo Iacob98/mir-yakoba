@@ -12,6 +12,7 @@ from src.db.models.post import PostStatus, PostVisibility
 from src.services.auth import AuthService
 from src.services.notification import notify_post_published
 from src.services.post import PostService
+from src.services.settings import SettingsService
 from src.services.user import UserService
 
 templates_path = Path(__file__).parent.parent.parent / "templates"
@@ -32,10 +33,16 @@ async def get_current_user_optional(
 
 
 @web_router.get("/", response_class=HTMLResponse)
-async def home(request: Request, user=Depends(get_current_user_optional)):
+async def home(
+    request: Request,
+    user=Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db),
+):
+    settings_service = SettingsService(db)
+    hero = await settings_service.get_hero_settings()
     return templates.TemplateResponse(
         "pages/home.html",
-        {"request": request, "title": "Home", "user": user},
+        {"request": request, "title": "Home", "user": user, "hero": hero},
     )
 
 
@@ -315,6 +322,83 @@ async def admin_delete_post(
         raise HTTPException(status_code=404, detail="Пост не найден")
 
     return {"success": True}
+
+
+@web_router.post("/admin/posts/{post_id}/toggle-pin", response_class=HTMLResponse)
+async def admin_toggle_pin(
+    post_id: str,
+    user=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Toggle pin status of a post."""
+    from uuid import UUID
+
+    try:
+        uuid_id = UUID(post_id)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Неверный ID поста")
+
+    post_service = PostService(db)
+    post = await post_service.toggle_pin(uuid_id)
+
+    if not post:
+        raise HTTPException(status_code=404, detail="Пост не найден")
+
+    return RedirectResponse(url="/admin", status_code=302)
+
+
+# ============= ADMIN SETTINGS ROUTES =============
+
+@web_router.get("/admin/settings", response_class=HTMLResponse)
+async def admin_settings(
+    request: Request,
+    user=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Site settings page."""
+    settings_service = SettingsService(db)
+    hero = await settings_service.get_hero_settings()
+
+    return templates.TemplateResponse(
+        "admin/settings.html",
+        {"request": request, "user": user, "settings": hero},
+    )
+
+
+@web_router.post("/admin/settings", response_class=HTMLResponse)
+async def admin_save_settings(
+    request: Request,
+    hero_title: str = Form(...),
+    hero_subtitle: str = Form(...),
+    user=Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Save site settings."""
+    import shutil
+    from fastapi import UploadFile, File
+
+    settings_service = SettingsService(db)
+
+    # Save text settings
+    await settings_service.set("hero_title", hero_title)
+    await settings_service.set("hero_subtitle", hero_subtitle)
+
+    # Handle avatar upload
+    form = await request.form()
+    avatar_file = form.get("avatar")
+    if avatar_file and hasattr(avatar_file, "filename") and avatar_file.filename:
+        # Save avatar file
+        static_dir = Path(__file__).parent.parent.parent / "static"
+        avatar_path = static_dir / "avatar.jpg"
+
+        # Save uploaded file
+        content = await avatar_file.read()
+        with open(avatar_path, "wb") as f:
+            f.write(content)
+
+        await settings_service.set("avatar_path", "avatar.jpg")
+
+    return RedirectResponse(url="/admin/settings", status_code=302)
 
 
 # ============= ADMIN USER ROUTES =============

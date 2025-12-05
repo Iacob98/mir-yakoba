@@ -6,7 +6,10 @@
 <div class="space-y-6">
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 class="text-2xl sm:text-3xl font-bold">Панель администратора</h1>
-        <div class="flex gap-2 w-full sm:w-auto">
+        <div class="flex gap-2 w-full sm:w-auto flex-wrap">
+            <a href="/admin/settings" class="flex-1 sm:flex-none text-center bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                Настройки
+            </a>
             <a href="/admin/users" class="flex-1 sm:flex-none text-center bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
                 Пользователи
             </a>
@@ -42,9 +45,14 @@
                 {% for post in posts %}
                 <div class="p-4 flex justify-between items-center hover:bg-gray-50">
                     <div>
-                        <a href="/admin/posts/{{ post.id }}/edit" class="font-medium hover:text-blue-500">
-                            {{ post.title }}
-                        </a>
+                        <div class="flex items-center gap-2">
+                            <a href="/admin/posts/{{ post.id }}/edit" class="font-medium hover:text-blue-500">
+                                {{ post.title }}
+                            </a>
+                            {% if post.is_pinned %}
+                            <span class="text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full">Закреплен</span>
+                            {% endif %}
+                        </div>
                         <div class="text-sm text-gray-500">
                             <span class="{% if post.status.value == 'published' %}text-green-600{% else %}text-yellow-600{% endif %}">
                                 {% if post.status.value == 'published' %}Опубликован{% elif post.status.value == 'draft' %}Черновик{% else %}Архив{% endif %}
@@ -53,7 +61,12 @@
                             · {{ post.created_at.strftime('%d.%m.%Y') }}
                         </div>
                     </div>
-                    <div class="flex space-x-2">
+                    <div class="flex items-center space-x-2">
+                        <form action="/admin/posts/{{ post.id }}/toggle-pin" method="POST" class="inline">
+                            <button type="submit" class="px-2 py-1 text-sm rounded {% if post.is_pinned %}bg-yellow-100 text-yellow-700 hover:bg-yellow-200{% else %}bg-gray-100 text-gray-600 hover:bg-gray-200{% endif %}" title="{% if post.is_pinned %}Открепить{% else %}Закрепить{% endif %}">
+                                📌
+                            </button>
+                        </form>
                         <a href="/posts/{{ post.slug }}" target="_blank" class="text-gray-500 hover:text-blue-500">
                             Просмотр
                         </a>

@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Настройки сайта{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 class="text-2xl sm:text-3xl font-bold">Настройки сайта</h1>
+        <a href="/admin" class="text-gray-500 hover:text-gray-700">
+            &larr; Вернуться в панель
+        </a>
+    </div>
+
+    <form action="/admin/settings" method="POST" enctype="multipart/form-data" class="space-y-6">
+        <!-- Avatar Section -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Аватар</h2>
+            <div class="flex items-center gap-6">
+                <img src="/static/{{ settings.avatar }}"
+                     alt="Текущий аватар"
+                     class="w-24 h-24 rounded-full object-cover border-4 border-gray-200">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        Загрузить новый аватар
+                    </label>
+                    <input type="file"
+                           name="avatar"
+                           accept="image/*"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <p class="text-xs text-gray-500 mt-1">JPG, PNG. Рекомендуемый размер: 200x200px</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hero Section -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-bold mb-4">Главная страница</h2>
+            <div class="space-y-4">
+                <div>
+                    <label for="hero_title" class="block text-sm font-medium text-gray-700 mb-1">
+                        Заголовок
+                    </label>
+                    <input type="text"
+                           id="hero_title"
+                           name="hero_title"
+                           value="{{ settings.title }}"
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Добро пожаловать в Мир Якоба">
+                </div>
+                <div>
+                    <label for="hero_subtitle" class="block text-sm font-medium text-gray-700 mb-1">
+                        Подзаголовок
+                    </label>
+                    <textarea id="hero_subtitle"
+                              name="hero_subtitle"
+                              rows="3"
+                              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Описание сайта...">{{ settings.subtitle }}</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submit -->
+        <div class="flex justify-end">
+            <button type="submit"
+                    class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition">
+                Сохранить настройки
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

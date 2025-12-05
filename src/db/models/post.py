@@ -71,6 +71,12 @@ class Post(Base, TimestampMixin):
         DateTime(timezone=True), nullable=True
     )
 
+    # Pinning
+    is_pinned: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    pinned_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     # Telegram reference
     telegram_message_id: Mapped[Optional[int]] = mapped_column(
         Integer, nullable=True

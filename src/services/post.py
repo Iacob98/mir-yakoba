@@ -303,9 +303,14 @@ class PostService:
         count_query = select(func.count()).select_from(query.subquery())
         total = (await self.db.execute(count_query)).scalar() or 0
 
-        # Get page
+        # Get page - pinned posts first, then by date
         query = (
-            query.order_by(Post.published_at.desc().nullslast(), Post.created_at.desc())
+            query.order_by(
+                Post.is_pinned.desc(),
+                Post.pinned_at.desc().nullslast(),
+                Post.published_at.desc().nullslast(),
+                Post.created_at.desc()
+            )
             .offset((page - 1) * per_page)
             .limit(per_page)
         )
@@ -460,3 +465,20 @@ class PostService:
             .values(view_count=Post.view_count + 1)
         )
         await self.db.commit()
+
+    async def toggle_pin(self, post_id: UUID) -> Optional[Post]:
+        """Toggle pin status of a post."""
+        post = await self.get_by_id(post_id)
+        if not post:
+            return None
+
+        if post.is_pinned:
+            post.is_pinned = False
+            post.pinned_at = None
+        else:
+            post.is_pinned = True
+            post.pinned_at = datetime.now(timezone.utc)
+
+        await self.db.commit()
+        await self.db.refresh(post)
+        return post
