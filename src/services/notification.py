@@ -2,6 +2,7 @@ import asyncio
 import logging
 from typing import Optional
 
+from aiogram.enums import ParseMode
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -84,7 +85,7 @@ class NotificationService:
         success_count = 0
         for user in users:
             try:
-                await bot.send_message(user.telegram_id, message)
+                await bot.send_message(user.telegram_id, message, parse_mode=ParseMode.HTML)
                 success_count += 1
                 # Small delay to avoid rate limiting
                 await asyncio.sleep(0.05)
@@ -142,7 +143,7 @@ async def notify_admin_new_comment(
     success = False
     for admin in admins:
         try:
-            await bot.send_message(admin.telegram_id, message)
+            await bot.send_message(admin.telegram_id, message, parse_mode=ParseMode.HTML)
             success = True
         except Exception as e:
             logger.warning(f"Failed to notify admin {admin.telegram_id}: {e}")

@@ -35,6 +35,7 @@ async def send_auth_code(telegram_id: int, code: str) -> bool:
             f"<code>{code}</code>\n\n"
             f"This code expires in {settings.auth_code_expire_minutes} minutes.\n"
             f"Don't share it with anyone!",
+            parse_mode=ParseMode.HTML,
         )
         return True
     except Exception:
@@ -44,7 +45,7 @@ async def send_auth_code(telegram_id: int, code: str) -> bool:
 async def notify_user(telegram_id: int, message: str) -> bool:
     """Send notification to user."""
     try:
-        await bot.send_message(telegram_id, message)
+        await bot.send_message(telegram_id, message, parse_mode=ParseMode.HTML)
         return True
     except Exception:
         return False
