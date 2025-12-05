@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Optional
 from uuid import UUID
@@ -12,6 +13,8 @@ from src.services.auth import AuthService
 from src.services.comment import CommentService
 from src.services.notification import notify_admin_new_comment, notify_comment_reply
 from src.services.post import PostService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -73,16 +76,27 @@ async def create_comment(
 
     # If this is a reply, notify the parent comment author
     if parent_id:
+        logger.info(f"Reply to comment {parent_id}, looking up parent comment")
         parent_comment = await comment_service.get_by_id(parent_id)
-        if parent_comment and parent_comment.author_id != user.id:
-            await notify_comment_reply(
-                db=db,
-                parent_comment_author=parent_comment.author,
-                reply_author_name=user.display_name,
-                post_title=post.title if post else "Пост",
-                post_slug=post.slug if post else "",
-                reply_content=content,
+        if parent_comment:
+            logger.info(
+                f"Parent comment found. author_id={parent_comment.author_id}, "
+                f"user.id={user.id}, same_author={parent_comment.author_id == user.id}"
             )
+            if parent_comment.author_id != user.id:
+                logger.info("Sending reply notification...")
+                await notify_comment_reply(
+                    db=db,
+                    parent_comment_author=parent_comment.author,
+                    reply_author_name=user.display_name,
+                    post_title=post.title if post else "Пост",
+                    post_slug=post.slug if post else "",
+                    reply_content=content,
+                )
+            else:
+                logger.info("Skipping notification: replying to own comment")
+        else:
+            logger.warning(f"Parent comment {parent_id} not found")
     # Notify admin about new top-level comment (don't notify if admin wrote it)
     elif not user.is_admin and post:
         await notify_admin_new_comment(

@@ -169,7 +169,13 @@ async def notify_comment_reply(
     reply_content: str,
 ) -> bool:
     """Notify user that someone replied to their comment."""
+    logger.info(
+        f"notify_comment_reply called: author={parent_comment_author.display_name}, "
+        f"telegram_id={parent_comment_author.telegram_id}, is_active={parent_comment_author.is_active}"
+    )
+
     if not parent_comment_author.is_active:
+        logger.info("Skipping notification: user is not active")
         return False
 
     preview = reply_content[:150] + "..." if len(reply_content) > 150 else reply_content
