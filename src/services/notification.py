@@ -3,6 +3,7 @@ import logging
 from typing import Optional
 
 from aiogram.enums import ParseMode
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -136,14 +137,22 @@ async def notify_admin_new_comment(
         f"💬 <b>Новый комментарий</b>\n\n"
         f"<b>Пост:</b> {post_title}\n"
         f"<b>Автор:</b> {comment_author_name}\n\n"
-        f"<i>{preview}</i>\n\n"
-        f'<a href="{post_url}">Перейти к посту</a>'
+        f"<i>{preview}</i>"
     )
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Перейти к посту", url=post_url)]
+    ])
 
     success = False
     for admin in admins:
         try:
-            await bot.send_message(admin.telegram_id, message, parse_mode=ParseMode.HTML)
+            await bot.send_message(
+                admin.telegram_id,
+                message,
+                parse_mode=ParseMode.HTML,
+                reply_markup=keyboard
+            )
             success = True
         except Exception as e:
             logger.warning(f"Failed to notify admin {admin.telegram_id}: {e}")
@@ -170,15 +179,19 @@ async def notify_comment_reply(
         f"💬 <b>Ответ на ваш комментарий</b>\n\n"
         f"<b>Пост:</b> {post_title}\n"
         f"<b>Автор ответа:</b> {reply_author_name}\n\n"
-        f"<i>{preview}</i>\n\n"
-        f'<a href="{post_url}">Перейти к посту</a>'
+        f"<i>{preview}</i>"
     )
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Перейти к посту", url=post_url)]
+    ])
 
     try:
         await bot.send_message(
             parent_comment_author.telegram_id,
             message,
-            parse_mode=ParseMode.HTML
+            parse_mode=ParseMode.HTML,
+            reply_markup=keyboard
         )
         return True
     except Exception as e:
