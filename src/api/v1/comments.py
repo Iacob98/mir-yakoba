@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.session import get_db
 from src.services.auth import AuthService
 from src.services.comment import CommentService
-from src.services.notification import notify_admin_new_comment
+from src.services.notification import notify_admin_new_comment, notify_comment_reply
 from src.services.post import PostService
 
 router = APIRouter()
@@ -49,10 +49,11 @@ async def create_comment(
     request: Request,
     post_id: UUID,
     content: str = Form(...),
+    parent_id: Optional[UUID] = Form(None),
     user=Depends(get_current_user_required),
     db: AsyncSession = Depends(get_db),
 ):
-    """Create a new comment. Returns HTML partial for htmx."""
+    """Create a new comment or reply. Returns HTML partial for htmx."""
     if not content.strip():
         return HTMLResponse(
             content='<div class="text-red-500 text-sm">Комментарий не может быть пустым</div>',
@@ -64,20 +65,33 @@ async def create_comment(
         post_id=post_id,
         author_id=user.id,
         content=content,
+        parent_id=parent_id,
     )
 
-    # Notify admin about new comment (don't notify if admin wrote it)
-    if not user.is_admin:
-        post_service = PostService(db)
-        post = await post_service.get_by_id(post_id)
-        if post:
-            await notify_admin_new_comment(
+    post_service = PostService(db)
+    post = await post_service.get_by_id(post_id)
+
+    # If this is a reply, notify the parent comment author
+    if parent_id:
+        parent_comment = await comment_service.get_by_id(parent_id)
+        if parent_comment and parent_comment.author_id != user.id:
+            await notify_comment_reply(
                 db=db,
-                comment_author_name=user.display_name,
-                post_title=post.title,
-                post_slug=post.slug,
-                comment_content=content,
+                parent_comment_author=parent_comment.author,
+                reply_author_name=user.display_name,
+                post_title=post.title if post else "Пост",
+                post_slug=post.slug if post else "",
+                reply_content=content,
             )
+    # Notify admin about new top-level comment (don't notify if admin wrote it)
+    elif not user.is_admin and post:
+        await notify_admin_new_comment(
+            db=db,
+            comment_author_name=user.display_name,
+            post_title=post.title,
+            post_slug=post.slug,
+            comment_content=content,
+        )
 
     return templates.TemplateResponse(
         "partials/comment.html",

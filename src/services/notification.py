@@ -149,3 +149,40 @@ async def notify_admin_new_comment(
             logger.warning(f"Failed to notify admin {admin.telegram_id}: {e}")
 
     return success
+
+
+async def notify_comment_reply(
+    db: AsyncSession,
+    parent_comment_author: User,
+    reply_author_name: str,
+    post_title: str,
+    post_slug: str,
+    reply_content: str,
+) -> bool:
+    """Notify user that someone replied to their comment."""
+    if not parent_comment_author.is_active:
+        return False
+
+    preview = reply_content[:150] + "..." if len(reply_content) > 150 else reply_content
+    post_url = f"{settings.base_url}/posts/{post_slug}"
+
+    message = (
+        f"💬 <b>Ответ на ваш комментарий</b>\n\n"
+        f"<b>Пост:</b> {post_title}\n"
+        f"<b>Автор ответа:</b> {reply_author_name}\n\n"
+        f"<i>{preview}</i>\n\n"
+        f'<a href="{post_url}">Перейти к посту</a>'
+    )
+
+    try:
+        await bot.send_message(
+            parent_comment_author.telegram_id,
+            message,
+            parse_mode=ParseMode.HTML
+        )
+        return True
+    except Exception as e:
+        logger.warning(
+            f"Failed to notify user {parent_comment_author.telegram_id} about reply: {e}"
+        )
+        return False
