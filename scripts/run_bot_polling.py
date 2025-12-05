@@ -29,7 +29,12 @@ async def main():
     )
 
     # Use Redis storage for FSM to persist state across restarts
-    storage = RedisStorage.from_url(settings.redis_url)
+    # Set TTL to 1 hour so users have time to write long posts
+    storage = RedisStorage.from_url(
+        settings.redis_url,
+        state_ttl=3600,  # 1 hour
+        data_ttl=3600,   # 1 hour
+    )
     dp = Dispatcher(storage=storage)
 
     # Import and include handlers
