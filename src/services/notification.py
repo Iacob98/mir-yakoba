@@ -106,5 +106,45 @@ class NotificationService:
 
 async def notify_post_published(db: AsyncSession, post: Post) -> int:
     """Helper function to notify about published post."""
-    service = NotificationService(db)
-    return await service.notify_new_post(post)
+    # Disabled - no post notifications
+    return 0
+
+
+async def notify_admin_new_comment(
+    db: AsyncSession,
+    comment_author_name: str,
+    post_title: str,
+    post_slug: str,
+    comment_content: str,
+) -> bool:
+    """Notify admin about new comment."""
+    # Get admin users
+    result = await db.execute(
+        select(User).where(User.is_admin == True, User.is_active == True)
+    )
+    admins = list(result.scalars().all())
+
+    if not admins:
+        return False
+
+    # Truncate comment if too long
+    preview = comment_content[:150] + "..." if len(comment_content) > 150 else comment_content
+    post_url = f"{settings.base_url}/posts/{post_slug}"
+
+    message = (
+        f"💬 <b>Новый комментарий</b>\n\n"
+        f"<b>Пост:</b> {post_title}\n"
+        f"<b>Автор:</b> {comment_author_name}\n\n"
+        f"<i>{preview}</i>\n\n"
+        f'<a href="{post_url}">Перейти к посту</a>'
+    )
+
+    success = False
+    for admin in admins:
+        try:
+            await bot.send_message(admin.telegram_id, message)
+            success = True
+        except Exception as e:
+            logger.warning(f"Failed to notify admin {admin.telegram_id}: {e}")
+
+    return success

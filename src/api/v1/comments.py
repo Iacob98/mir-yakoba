@@ -10,6 +10,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.db.session import get_db
 from src.services.auth import AuthService
 from src.services.comment import CommentService
+from src.services.notification import notify_admin_new_comment
+from src.services.post import PostService
 
 router = APIRouter()
 
@@ -63,6 +65,19 @@ async def create_comment(
         author_id=user.id,
         content=content,
     )
+
+    # Notify admin about new comment (don't notify if admin wrote it)
+    if not user.is_admin:
+        post_service = PostService(db)
+        post = await post_service.get_by_id(post_id)
+        if post:
+            await notify_admin_new_comment(
+                db=db,
+                comment_author_name=user.display_name,
+                post_title=post.title,
+                post_slug=post.slug,
+                comment_content=content,
+            )
 
     return templates.TemplateResponse(
         "partials/comment.html",
