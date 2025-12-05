@@ -1,0 +1,24 @@
+<div class="relative group" id="media-{{ media.id }}" data-media-id="{{ media.id }}">
+    {% if media.media_type.value == 'image' %}
+    <img src="/uploads/{{ media.file_path }}"
+         alt="{{ media.original_name }}"
+         class="w-full h-24 object-cover rounded">
+    {% elif media.media_type.value == 'audio' %}
+    <div class="w-full h-24 bg-purple-100 rounded flex items-center justify-center">
+        <span class="text-2xl">🎵</span>
+    </div>
+    {% else %}
+    <div class="w-full h-24 bg-blue-100 rounded flex items-center justify-center">
+        <span class="text-2xl">🎬</span>
+    </div>
+    {% endif %}
+    <button type="button"
+            hx-delete="/api/v1/media/{{ media.id }}"
+            hx-target="#media-{{ media.id }}"
+            hx-swap="outerHTML"
+            hx-confirm="Delete this media?"
+            class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 text-xs opacity-0 group-hover:opacity-100 transition">
+        ✕
+    </button>
+    <div class="text-xs text-gray-500 truncate mt-1">{{ media.original_name }}</div>
+</div>

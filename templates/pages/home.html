@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %}Главная{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <header class="text-center py-8">
+        <h1 class="text-2xl sm:text-4xl font-bold text-gray-900 mb-4">Добро пожаловать в Мир Якоба</h1>
+        <p class="text-gray-600 text-base sm:text-lg">Одно место для всех моих фото, видео, мыслей и историй — без алгоритмов и цензуры.</p>
+    </header>
+
+    <!-- Posts will be loaded here -->
+    <div id="posts-container"
+         hx-get="/partials/posts"
+         hx-trigger="load"
+         hx-swap="innerHTML">
+        <div class="text-center py-8">
+            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            <p class="text-gray-500 mt-2">Загрузка постов...</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

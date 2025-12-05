@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}Редактирование пользователя - {{ target_user.display_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold">Редактирование пользователя</h1>
+        <a href="/admin/users" class="text-gray-500 hover:text-gray-700">← К списку</a>
+    </div>
+
+    <!-- User info card -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+        <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-semibold">{{ target_user.display_name }}</h2>
+                {% if target_user.username %}
+                <p class="text-gray-500">@{{ target_user.username }}</p>
+                {% endif %}
+            </div>
+            <div class="text-sm text-gray-500 sm:text-right">
+                <p>Telegram ID: {{ target_user.telegram_id }}</p>
+                <p>Регистрация: {{ target_user.created_at.strftime('%d.%m.%Y %H:%M') }}</p>
+                {% if target_user.last_login %}
+                <p>Последний вход: {{ target_user.last_login.strftime('%d.%m.%Y %H:%M') }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Current status badges -->
+        <div class="mt-4 flex gap-2">
+            <span class="px-3 py-1 text-sm rounded-full
+                {% if target_user.access_level.value == 3 %}bg-purple-100 text-purple-800
+                {% elif target_user.access_level.value == 2 %}bg-blue-100 text-blue-800
+                {% elif target_user.access_level.value == 1 %}bg-green-100 text-green-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ target_user.access_level.name | title }}
+            </span>
+            {% if target_user.is_admin %}
+            <span class="px-3 py-1 text-sm rounded-full bg-red-100 text-red-800">Админ</span>
+            {% endif %}
+            {% if not target_user.is_active %}
+            <span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-800">Неактивен</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Access Level Form -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+        <h3 class="text-lg font-medium mb-4">Уровень доступа</h3>
+        <form action="/admin/users/{{ target_user.id }}/access-level" method="POST" class="flex flex-col sm:flex-row gap-4 sm:items-end">
+            <div class="flex-1">
+                <label for="access_level" class="block text-sm font-medium text-gray-700 mb-1">Уровень</label>
+                <select name="access_level"
+                        id="access_level"
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="0" {% if target_user.access_level.value == 0 %}selected{% endif %}>
+                        Публичный (0)
+                    </option>
+                    <option value="1" {% if target_user.access_level.value == 1 %}selected{% endif %}>
+                        Зарегистрированный (1)
+                    </option>
+                    <option value="2" {% if target_user.access_level.value == 2 %}selected{% endif %}>
+                        Premium 1 (2)
+                    </option>
+                    <option value="3" {% if target_user.access_level.value == 3 %}selected{% endif %}>
+                        Premium 2 (3)
+                    </option>
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                Обновить уровень
+            </button>
+        </form>
+    </div>
+
+    <!-- Admin Toggle -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6 mb-6">
+        <h3 class="text-lg font-medium mb-4">Статус администратора</h3>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <p class="text-gray-700">
+                    {% if target_user.is_admin %}
+                    Этот пользователь <strong>является администратором</strong> и может управлять контентом.
+                    {% else %}
+                    Этот пользователь <strong>не является администратором</strong>.
+                    {% endif %}
+                </p>
+            </div>
+            {% if target_user.id != user.id %}
+            <form action="/admin/users/{{ target_user.id }}/toggle-admin" method="POST">
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg
+                            {% if target_user.is_admin %}
+                            bg-yellow-100 text-yellow-800 hover:bg-yellow-200
+                            {% else %}
+                            bg-green-100 text-green-800 hover:bg-green-200
+                            {% endif %}">
+                    {% if target_user.is_admin %}Снять права админа{% else %}Сделать админом{% endif %}
+                </button>
+            </form>
+            {% else %}
+            <span class="text-gray-400 text-sm">Нельзя изменить собственный статус</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Active Toggle -->
+    <div class="bg-white rounded-lg shadow p-4 sm:p-6">
+        <h3 class="text-lg font-medium mb-4">Статус аккаунта</h3>
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <p class="text-gray-700">
+                    {% if target_user.is_active %}
+                    Аккаунт <strong class="text-green-600">активен</strong>. Пользователь может войти.
+                    {% else %}
+                    Аккаунт <strong class="text-red-600">неактивен</strong>. Пользователь не может войти.
+                    {% endif %}
+                </p>
+            </div>
+            {% if target_user.id != user.id %}
+            <form action="/admin/users/{{ target_user.id }}/toggle-active" method="POST">
+                <button type="submit"
+                        class="px-4 py-2 rounded-lg
+                            {% if target_user.is_active %}
+                            bg-red-100 text-red-800 hover:bg-red-200
+                            {% else %}
+                            bg-green-100 text-green-800 hover:bg-green-200
+                            {% endif %}">
+                    {% if target_user.is_active %}Деактивировать{% else %}Активировать{% endif %}
+                </button>
+            </form>
+            {% else %}
+            <span class="text-gray-400 text-sm">Нельзя деактивировать себя</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

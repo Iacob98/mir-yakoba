@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Панель администратора{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h1 class="text-2xl sm:text-3xl font-bold">Панель администратора</h1>
+        <div class="flex gap-2 w-full sm:w-auto">
+            <a href="/admin/users" class="flex-1 sm:flex-none text-center bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600">
+                Пользователи
+            </a>
+            <a href="/admin/posts/new" class="flex-1 sm:flex-none text-center bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">
+                + Новый пост
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="text-3xl font-bold text-blue-500">{{ stats.posts }}</div>
+            <div class="text-gray-600">Всего постов</div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="text-3xl font-bold text-green-500">{{ stats.published }}</div>
+            <div class="text-gray-600">Опубликовано</div>
+        </div>
+        <div class="bg-white p-6 rounded-lg shadow">
+            <div class="text-3xl font-bold text-yellow-500">{{ stats.drafts }}</div>
+            <div class="text-gray-600">Черновики</div>
+        </div>
+    </div>
+
+    <!-- Recent Posts -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="p-4 border-b">
+            <h2 class="text-xl font-bold">Последние посты</h2>
+        </div>
+        <div class="divide-y">
+            {% if posts %}
+                {% for post in posts %}
+                <div class="p-4 flex justify-between items-center hover:bg-gray-50">
+                    <div>
+                        <a href="/admin/posts/{{ post.id }}/edit" class="font-medium hover:text-blue-500">
+                            {{ post.title }}
+                        </a>
+                        <div class="text-sm text-gray-500">
+                            <span class="{% if post.status.value == 'published' %}text-green-600{% else %}text-yellow-600{% endif %}">
+                                {% if post.status.value == 'published' %}Опубликован{% elif post.status.value == 'draft' %}Черновик{% else %}Архив{% endif %}
+                            </span>
+                            · {{ post.visibility.value | title }}
+                            · {{ post.created_at.strftime('%d.%m.%Y') }}
+                        </div>
+                    </div>
+                    <div class="flex space-x-2">
+                        <a href="/posts/{{ post.slug }}" target="_blank" class="text-gray-500 hover:text-blue-500">
+                            Просмотр
+                        </a>
+                        <a href="/admin/posts/{{ post.id }}/edit" class="text-gray-500 hover:text-blue-500">
+                            Редактировать
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="p-8 text-center text-gray-500">
+                    Постов пока нет. <a href="/admin/posts/new" class="text-blue-500 hover:underline">Создайте первый пост!</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

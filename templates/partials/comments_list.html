@@ -1,0 +1,58 @@
+{% if comments %}
+<div class="space-y-4">
+    {% for comment in comments %}
+    <div class="border-l-2 border-gray-200 pl-4 py-3" id="comment-{{ comment.id }}">
+        <div class="flex items-start justify-between">
+            <div class="flex items-center space-x-2 mb-2">
+                <span class="font-medium text-gray-900">{{ comment.author.display_name }}</span>
+                <span class="text-gray-400 text-sm">{{ comment.created_at.strftime('%d.%m.%Y в %H:%M') }}</span>
+            </div>
+            {% if user and (user.id == comment.author_id or user.is_admin) %}
+            <button type="button"
+                    hx-delete="/api/v1/comments/{{ comment.id }}"
+                    hx-target="#comment-{{ comment.id }}"
+                    hx-swap="outerHTML"
+                    hx-confirm="Удалить этот комментарий?"
+                    class="text-gray-400 hover:text-red-500 text-sm">
+                Удалить
+            </button>
+            {% endif %}
+        </div>
+        <p class="text-gray-700 whitespace-pre-wrap">{{ comment.content }}</p>
+
+        {% if comment._replies is defined and comment._replies %}
+        <div class="mt-3 ml-4 space-y-3 border-l border-gray-100 pl-4">
+            {% for reply in comment._replies recursive %}
+            <div class="py-2" id="comment-{{ reply.id }}">
+                <div class="flex items-start justify-between">
+                    <div class="flex items-center space-x-2 mb-1">
+                        <span class="font-medium text-gray-800 text-sm">{{ reply.author.display_name }}</span>
+                        <span class="text-gray-400 text-xs">{{ reply.created_at.strftime('%d.%m в %H:%M') }}</span>
+                    </div>
+                    {% if user and (user.id == reply.author_id or user.is_admin) %}
+                    <button type="button"
+                            hx-delete="/api/v1/comments/{{ reply.id }}"
+                            hx-target="#comment-{{ reply.id }}"
+                            hx-swap="outerHTML"
+                            hx-confirm="Удалить этот ответ?"
+                            class="text-gray-400 hover:text-red-500 text-xs">
+                        Удалить
+                    </button>
+                    {% endif %}
+                </div>
+                <p class="text-gray-600 text-sm whitespace-pre-wrap">{{ reply.content }}</p>
+                {% if reply._replies is defined and reply._replies %}
+                <div class="mt-2 ml-4 border-l border-gray-100 pl-4">
+                    {{ loop(reply._replies) }}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<p class="text-gray-500">Комментариев пока нет.</p>
+{% endif %}

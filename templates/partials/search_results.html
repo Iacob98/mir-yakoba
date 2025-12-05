@@ -1,0 +1,40 @@
+{% if query %}
+    {% if posts %}
+    <p class="text-gray-600 mb-4">Found {{ total }} result{% if total != 1 %}s{% endif %} for "{{ query }}"</p>
+    <div class="space-y-4">
+        {% for post in posts %}
+        <article class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+            <h2 class="text-xl font-semibold mb-2">
+                <a href="/posts/{{ post.slug }}" class="hover:text-blue-600">{{ post.title }}</a>
+            </h2>
+            {% if post.excerpt %}
+            <p class="text-gray-600 text-sm mb-2">{{ post.excerpt }}</p>
+            {% endif %}
+            <div class="flex items-center text-xs text-gray-500 space-x-3">
+                {% if post.published_at %}
+                <span>{{ post.published_at.strftime('%B %d, %Y') }}</span>
+                {% endif %}
+                <span>{{ post.view_count }} views</span>
+                {% if post.visibility.value != 'public' %}
+                <span class="px-2 py-0.5 rounded-full
+                    {% if post.visibility.value == 'premium_2' %}bg-purple-100 text-purple-700
+                    {% elif post.visibility.value == 'premium_1' %}bg-blue-100 text-blue-700
+                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                    {{ post.visibility.value | replace('_', ' ') | title }}
+                </span>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-12 text-gray-500">
+        <p class="text-xl mb-2">No results found</p>
+        <p>Try different keywords or check your spelling</p>
+    </div>
+    {% endif %}
+{% else %}
+<div class="text-center py-12 text-gray-400">
+    <p>Enter a search term to find posts</p>
+</div>
+{% endif %}

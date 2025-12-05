@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Поиск{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Поиск</h1>
+
+    <!-- Search form -->
+    <form action="/search" method="GET" class="mb-8">
+        <div class="flex gap-2">
+            <input type="text"
+                   name="q"
+                   value="{{ query }}"
+                   placeholder="Поиск по постам..."
+                   class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
+                   autofocus
+                   hx-get="/partials/search-results"
+                   hx-trigger="keyup changed delay:300ms"
+                   hx-target="#search-results"
+                   hx-include="[name='q']">
+            <button type="submit" class="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                Найти
+            </button>
+        </div>
+    </form>
+
+    <!-- Results -->
+    <div id="search-results">
+        {% if query %}
+            {% if posts %}
+            <p class="text-gray-600 mb-4">Найдено {{ total }} результат{% if total != 1 %}ов{% endif %} по запросу "{{ query }}"</p>
+            <div class="space-y-4">
+                {% for post in posts %}
+                <article class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
+                    <h2 class="text-xl font-semibold mb-2">
+                        <a href="/posts/{{ post.slug }}" class="hover:text-blue-600">{{ post.title }}</a>
+                    </h2>
+                    {% if post.excerpt %}
+                    <p class="text-gray-600 text-sm mb-2">{{ post.excerpt }}</p>
+                    {% endif %}
+                    <div class="flex items-center text-xs text-gray-500 space-x-3">
+                        {% if post.published_at %}
+                        <span>{{ post.published_at.strftime('%d.%m.%Y') }}</span>
+                        {% endif %}
+                        <span>{{ post.view_count }} просмотров</span>
+                        {% if post.visibility.value != 'public' %}
+                        <span class="px-2 py-0.5 rounded-full
+                            {% if post.visibility.value == 'premium_2' %}bg-purple-100 text-purple-700
+                            {% elif post.visibility.value == 'premium_1' %}bg-blue-100 text-blue-700
+                            {% else %}bg-gray-100 text-gray-700{% endif %}">
+                            {{ post.visibility.value | replace('_', ' ') | title }}
+                        </span>
+                        {% endif %}
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+
+            {% if has_more %}
+            <div class="text-center mt-6">
+                <a href="/search?q={{ query }}&page={{ page + 1 }}"
+                   class="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                    Загрузить ещё
+                </a>
+            </div>
+            {% endif %}
+            {% else %}
+            <div class="text-center py-12 text-gray-500">
+                <p class="text-xl mb-2">Ничего не найдено</p>
+                <p>Попробуйте другие ключевые слова</p>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="text-center py-12 text-gray-400">
+            <p>Введите запрос для поиска постов</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

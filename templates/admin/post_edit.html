@@ -1,0 +1,345 @@
+{% extends "base.html" %}
+
+{% block title %}{% if post %}Редактирование поста{% else %}Новый пост{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-6">
+        <h1 class="text-2xl sm:text-3xl font-bold">{% if post %}Редактирование поста{% else %}Новый пост{% endif %}</h1>
+        <a href="/admin" class="text-gray-500 hover:text-gray-700">← К панели</a>
+    </div>
+
+    <!-- Main Post Form -->
+    <form method="POST" class="space-y-6" id="post-form">
+        <!-- Hidden fields -->
+        <input type="hidden" name="media_ids" id="media-ids" value="">
+        <input type="hidden" name="content_blocks" id="content-blocks" value="">
+        <input type="hidden" name="content_md" id="content-md" value="{{ post.content_md if post else '' }}">
+
+        <!-- Title -->
+        <div>
+            <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Заголовок</label>
+            <input type="text"
+                   id="title"
+                   name="title"
+                   value="{{ post.title if post else '' }}"
+                   class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                   required>
+        </div>
+
+        <!-- Editor.js Content -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Содержимое</label>
+            <div id="editorjs" class="border rounded-lg min-h-[400px] p-4 bg-white"></div>
+        </div>
+
+        <!-- Excerpt -->
+        <div>
+            <label for="excerpt" class="block text-sm font-medium text-gray-700 mb-1">
+                Описание (необязательно)
+            </label>
+            <textarea id="excerpt"
+                      name="excerpt"
+                      rows="2"
+                      class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">{{ post.excerpt if post else '' }}</textarea>
+        </div>
+
+        <!-- Media Upload Section (for legacy/additional media) -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Дополнительные медиа</label>
+            <div class="border-2 border-dashed border-gray-300 rounded-lg p-4">
+                <div class="mb-4">
+                    <input type="file"
+                           id="media-file"
+                           accept="image/*,audio/*,video/*"
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <button type="button"
+                            id="upload-btn"
+                            class="mt-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm">
+                        Загрузить
+                    </button>
+                    <span id="upload-status" class="ml-2 text-sm text-gray-500"></span>
+                </div>
+
+                <div id="media-gallery" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    {% if post and post.media %}
+                        {% for media in post.media %}
+                        {% include "partials/media_item.html" %}
+                        {% endfor %}
+                    {% endif %}
+                </div>
+
+                <p class="text-xs text-gray-500 mt-2">
+                    Совет: Вы также можете добавлять изображения прямо в редакторе с помощью инструмента «Изображение».
+                </p>
+            </div>
+        </div>
+
+        <!-- Settings row -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- Visibility -->
+            <div>
+                <label for="visibility" class="block text-sm font-medium text-gray-700 mb-1">Видимость</label>
+                <select id="visibility"
+                        name="visibility"
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="public" {% if not post or post.visibility.value == 'public' %}selected{% endif %}>
+                        Публичный - Для всех
+                    </option>
+                    <option value="registered" {% if post and post.visibility.value == 'registered' %}selected{% endif %}>
+                        Зарегистрированный - Только для авторизованных
+                    </option>
+                    <option value="premium_1" {% if post and post.visibility.value == 'premium_1' %}selected{% endif %}>
+                        Premium 1
+                    </option>
+                    <option value="premium_2" {% if post and post.visibility.value == 'premium_2' %}selected{% endif %}>
+                        Premium 2
+                    </option>
+                </select>
+            </div>
+
+            <!-- Status -->
+            <div>
+                <label for="status" class="block text-sm font-medium text-gray-700 mb-1">Статус</label>
+                <select id="status"
+                        name="status"
+                        class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <option value="draft" {% if not post or post.status.value == 'draft' %}selected{% endif %}>
+                        Черновик
+                    </option>
+                    <option value="published" {% if post and post.status.value == 'published' %}selected{% endif %}>
+                        Опубликован
+                    </option>
+                    <option value="archived" {% if post and post.status.value == 'archived' %}selected{% endif %}>
+                        В архиве
+                    </option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex flex-col-reverse sm:flex-row justify-between gap-4 pt-4 border-t">
+            <div>
+                {% if post %}
+                <button type="button"
+                        hx-delete="/admin/posts/{{ post.id }}"
+                        hx-confirm="Вы уверены, что хотите удалить этот пост?"
+                        class="text-red-500 hover:text-red-700">
+                    Удалить пост
+                </button>
+                {% endif %}
+            </div>
+            <div class="flex flex-col sm:flex-row gap-2">
+                <a href="/admin" class="px-4 py-2 border rounded-lg hover:bg-gray-50 text-center">Отмена</a>
+                <button type="submit" id="submit-btn" class="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">
+                    {% if post %}Сохранить{% else %}Создать пост{% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Editor.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/editorjs@2.28.2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/header@2.8.1"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/list@1.9.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/image@2.9.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/quote@2.6.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/delimiter@1.4.0"></script>
+<script src="https://cdn.jsdelivr.net/npm/@editorjs/code@2.9.0"></script>
+
+<script>
+(function() {
+    var uploadBtn = document.getElementById('upload-btn');
+    var fileInput = document.getElementById('media-file');
+    var gallery = document.getElementById('media-gallery');
+    var statusEl = document.getElementById('upload-status');
+    var postForm = document.getElementById('post-form');
+    var mediaIdsInput = document.getElementById('media-ids');
+    var contentBlocksInput = document.getElementById('content-blocks');
+    var contentMdInput = document.getElementById('content-md');
+    var postId = '{{ post.id if post else "" }}';
+
+    // Initialize Editor.js
+    var initialData = {{ post.content_blocks | tojson | safe if post and post.content_blocks else '{}' }};
+
+    // If no blocks but has markdown content, create a paragraph block from it
+    if (!initialData.blocks && contentMdInput.value) {
+        initialData = {
+            blocks: [{
+                type: 'paragraph',
+                data: { text: contentMdInput.value.replace(/\n/g, '<br>') }
+            }]
+        };
+    }
+
+    var editor = new EditorJS({
+        holder: 'editorjs',
+        placeholder: 'Начните писать ваш пост...',
+        data: initialData.blocks ? initialData : undefined,
+        tools: {
+            header: {
+                class: Header,
+                config: {
+                    placeholder: 'Введите заголовок',
+                    levels: [2, 3, 4],
+                    defaultLevel: 2
+                }
+            },
+            list: {
+                class: List,
+                inlineToolbar: true
+            },
+            image: {
+                class: ImageTool,
+                config: {
+                    endpoints: {
+                        byFile: '/api/v1/media/upload-editorjs'
+                    },
+                    field: 'file',
+                    types: 'image/*'
+                }
+            },
+            quote: {
+                class: Quote,
+                inlineToolbar: true,
+                config: {
+                    quotePlaceholder: 'Введите цитату',
+                    captionPlaceholder: 'Автор цитаты'
+                }
+            },
+            delimiter: Delimiter,
+            code: CodeTool
+        },
+        onReady: function() {
+            console.log('Editor.js is ready');
+        }
+    });
+
+    // Form submission handler
+    postForm.onsubmit = async function(e) {
+        e.preventDefault();
+
+        // Collect media IDs
+        var items = gallery.querySelectorAll('[data-media-id]');
+        var ids = [];
+        for (var i = 0; i < items.length; i++) {
+            ids.push(items[i].getAttribute('data-media-id'));
+        }
+        mediaIdsInput.value = ids.join(',');
+
+        // Save Editor.js content
+        try {
+            var outputData = await editor.save();
+            contentBlocksInput.value = JSON.stringify(outputData);
+
+            // Extract plain text for content_md (for search indexing)
+            var plainText = outputData.blocks.map(function(block) {
+                if (block.type === 'paragraph' || block.type === 'header') {
+                    return block.data.text.replace(/<[^>]+>/g, '');
+                } else if (block.type === 'list') {
+                    return block.data.items.join('\n');
+                } else if (block.type === 'quote') {
+                    return block.data.text;
+                } else if (block.type === 'code') {
+                    return block.data.code;
+                }
+                return '';
+            }).join('\n\n');
+            contentMdInput.value = plainText;
+
+            console.log('Saving post with blocks:', outputData);
+        } catch (error) {
+            console.error('Editor.js save error:', error);
+            alert('Ошибка сохранения. Попробуйте ещё раз.');
+            return;
+        }
+
+        // Submit the form
+        postForm.submit();
+    };
+
+    // Upload button click (for additional media)
+    uploadBtn.onclick = function() {
+        var file = fileInput.files[0];
+        if (!file) {
+            alert('Сначала выберите файл');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file', file);
+        if (postId) {
+            formData.append('post_id', postId);
+        }
+
+        uploadBtn.disabled = true;
+        statusEl.textContent = 'Загрузка...';
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/v1/media/upload', true);
+        xhr.withCredentials = true;
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                gallery.insertAdjacentHTML('beforeend', xhr.responseText);
+                fileInput.value = '';
+                statusEl.textContent = 'Загружено!';
+                if (typeof htmx !== 'undefined') {
+                    htmx.process(gallery);
+                }
+            } else {
+                statusEl.textContent = 'Ошибка: ' + xhr.status;
+                alert('Ошибка загрузки: ' + xhr.responseText);
+            }
+            uploadBtn.disabled = false;
+        };
+
+        xhr.onerror = function() {
+            statusEl.textContent = 'Ошибка сети';
+            alert('Ошибка сети при загрузке');
+            uploadBtn.disabled = false;
+        };
+
+        xhr.send(formData);
+    };
+})();
+</script>
+
+<style>
+/* Editor.js styling */
+#editorjs {
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.ce-block__content {
+    max-width: 100%;
+}
+
+.ce-toolbar__content {
+    max-width: 100%;
+}
+
+.codex-editor__redactor {
+    padding-bottom: 100px !important;
+}
+
+/* Make inline toolbar visible */
+.ce-inline-toolbar {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* Style the plus button */
+.ce-toolbar__plus {
+    color: #3b82f6;
+}
+
+.ce-toolbar__plus:hover {
+    background: #eff6ff;
+}
+</style>
+{% endblock %}
