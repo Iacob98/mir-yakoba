@@ -163,14 +163,139 @@
     // Initialize Editor.js
     var initialData = {{ post.content_blocks | tojson | safe if post and post.content_blocks else '{}' }};
 
-    // If no blocks but has markdown content, create a paragraph block from it
+    // Parse Markdown to Editor.js blocks
+    function parseMarkdownToBlocks(md) {
+        var blocks = [];
+        var lines = md.split('\n');
+        var i = 0;
+
+        while (i < lines.length) {
+            var line = lines[i];
+            var trimmed = line.trim();
+
+            // Skip empty lines
+            if (!trimmed) {
+                i++;
+                continue;
+            }
+
+            // Headers
+            var headerMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+            if (headerMatch) {
+                blocks.push({
+                    type: 'header',
+                    data: { level: headerMatch[1].length, text: parseInlineMarkdown(headerMatch[2]) }
+                });
+                i++;
+                continue;
+            }
+
+            // Blockquotes
+            if (trimmed.startsWith('> ')) {
+                var quoteLines = [];
+                while (i < lines.length && lines[i].trim().startsWith('> ')) {
+                    quoteLines.push(lines[i].trim().substring(2));
+                    i++;
+                }
+                blocks.push({
+                    type: 'quote',
+                    data: { text: parseInlineMarkdown(quoteLines.join('<br>')) }
+                });
+                continue;
+            }
+
+            // Unordered list
+            if (trimmed.match(/^[-*]\s+/)) {
+                var items = [];
+                while (i < lines.length && lines[i].trim().match(/^[-*]\s+/)) {
+                    items.push(parseInlineMarkdown(lines[i].trim().replace(/^[-*]\s+/, '')));
+                    i++;
+                }
+                blocks.push({
+                    type: 'list',
+                    data: { style: 'unordered', items: items }
+                });
+                continue;
+            }
+
+            // Ordered list
+            if (trimmed.match(/^\d+\.\s+/)) {
+                var items = [];
+                while (i < lines.length && lines[i].trim().match(/^\d+\.\s+/)) {
+                    items.push(parseInlineMarkdown(lines[i].trim().replace(/^\d+\.\s+/, '')));
+                    i++;
+                }
+                blocks.push({
+                    type: 'list',
+                    data: { style: 'ordered', items: items }
+                });
+                continue;
+            }
+
+            // Code block
+            if (trimmed.startsWith('```')) {
+                i++;
+                var codeLines = [];
+                while (i < lines.length && !lines[i].trim().startsWith('```')) {
+                    codeLines.push(lines[i]);
+                    i++;
+                }
+                blocks.push({
+                    type: 'code',
+                    data: { code: codeLines.join('\n') }
+                });
+                i++; // skip closing ```
+                continue;
+            }
+
+            // Delimiter
+            if (trimmed.match(/^[-*_]{3,}$/)) {
+                blocks.push({ type: 'delimiter', data: {} });
+                i++;
+                continue;
+            }
+
+            // Paragraph (collect consecutive non-empty lines)
+            var paraLines = [];
+            while (i < lines.length && lines[i].trim() &&
+                   !lines[i].trim().match(/^#{1,4}\s/) &&
+                   !lines[i].trim().startsWith('> ') &&
+                   !lines[i].trim().match(/^[-*]\s+/) &&
+                   !lines[i].trim().match(/^\d+\.\s+/) &&
+                   !lines[i].trim().startsWith('```') &&
+                   !lines[i].trim().match(/^[-*_]{3,}$/)) {
+                paraLines.push(lines[i].trim());
+                i++;
+            }
+            if (paraLines.length > 0) {
+                blocks.push({
+                    type: 'paragraph',
+                    data: { text: parseInlineMarkdown(paraLines.join('<br>')) }
+                });
+            }
+        }
+
+        return { blocks: blocks };
+    }
+
+    // Parse inline Markdown (bold, italic, code, links)
+    function parseInlineMarkdown(text) {
+        // Bold: **text** or __text__
+        text = text.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+        text = text.replace(/__(.+?)__/g, '<b>$1</b>');
+        // Italic: *text* or _text_
+        text = text.replace(/\*([^*]+)\*/g, '<i>$1</i>');
+        text = text.replace(/_([^_]+)_/g, '<i>$1</i>');
+        // Inline code: `code`
+        text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+        // Links: [text](url)
+        text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+        return text;
+    }
+
+    // If no blocks but has markdown content, parse it to blocks
     if (!initialData.blocks && contentMdInput.value) {
-        initialData = {
-            blocks: [{
-                type: 'paragraph',
-                data: { text: contentMdInput.value.replace(/\n/g, '<br>') }
-            }]
-        };
+        initialData = parseMarkdownToBlocks(contentMdInput.value);
     }
 
     var editor = new EditorJS({
