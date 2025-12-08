@@ -62,7 +62,11 @@ async def posts_partial(
     db: AsyncSession = Depends(get_db),
 ):
     """Return posts list as HTML partial for htmx."""
-    access_level = user.access_level if user else AccessLevel.PUBLIC
+    # Admins see all content regardless of their access_level
+    if user and user.is_admin:
+        access_level = AccessLevel.PREMIUM_2
+    else:
+        access_level = user.access_level if user else AccessLevel.PUBLIC
     post_service = PostService(db)
 
     posts, total = await post_service.list_posts(
@@ -190,7 +194,7 @@ async def admin_create_post(
         ids = [mid.strip() for mid in media_ids.split(",") if mid.strip()]
         for idx, mid in enumerate(ids):
             try:
-                await media_service.attach_to_post(UUID(mid), post.id)
+                await media_service.attach_to_post(UUID(mid), post.id, user.id)
                 await media_service.update_sort_order(UUID(mid), idx)
             except (ValueError, Exception):
                 pass  # Skip invalid IDs
@@ -288,7 +292,7 @@ async def admin_update_post(
     # Attach new media
     for mid in new_ids - current_ids:
         try:
-            await media_service.attach_to_post(UUID(mid), post.id)
+            await media_service.attach_to_post(UUID(mid), post.id, user.id)
         except (ValueError, Exception):
             pass
 
@@ -572,7 +576,11 @@ async def post_detail(
 ):
     """View a single post."""
     post_service = PostService(db)
-    user_access = user.access_level if user else AccessLevel.PUBLIC
+    # Admins see all content
+    if user and user.is_admin:
+        user_access = AccessLevel.PREMIUM_2
+    else:
+        user_access = user.access_level if user else AccessLevel.PUBLIC
 
     post = await post_service.get_post_by_slug(slug, user_access_level=user_access)
 
@@ -600,7 +608,11 @@ async def search_page(
 ):
     """Search posts page."""
     post_service = PostService(db)
-    user_access = user.access_level if user else AccessLevel.PUBLIC
+    # Admins see all content
+    if user and user.is_admin:
+        user_access = AccessLevel.PREMIUM_2
+    else:
+        user_access = user.access_level if user else AccessLevel.PUBLIC
 
     posts = []
     total = 0
@@ -639,7 +651,11 @@ async def search_results_partial(
 ):
     """Search results partial for htmx."""
     post_service = PostService(db)
-    user_access = user.access_level if user else AccessLevel.PUBLIC
+    # Admins see all content
+    if user and user.is_admin:
+        user_access = AccessLevel.PREMIUM_2
+    else:
+        user_access = user.access_level if user else AccessLevel.PUBLIC
 
     posts = []
     total = 0

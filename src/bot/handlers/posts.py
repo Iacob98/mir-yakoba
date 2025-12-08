@@ -756,7 +756,7 @@ async def process_media_done(callback: CallbackQuery, state: FSMContext):
         # Attach original voice/video if requested (already saved earlier)
         if data.get("save_original_audio") and data.get("voice_media_id"):
             voice_media_uuid = UUID(data["voice_media_id"])
-            await media_service.attach_to_post(voice_media_uuid, post.id)
+            await media_service.attach_to_post(voice_media_uuid, post.id, user.id)
             await media_service.update_sort_order(voice_media_uuid, 0)
 
         # Attach additional media to post
@@ -764,7 +764,7 @@ async def process_media_done(callback: CallbackQuery, state: FSMContext):
         if media_ids:
             start_idx = 1 if data.get("save_original_audio") and data.get("voice_media_id") else 0
             for idx, mid in enumerate(media_ids):
-                await media_service.attach_to_post(UUID(mid), post.id)
+                await media_service.attach_to_post(UUID(mid), post.id, user.id)
                 await media_service.update_sort_order(UUID(mid), start_idx + idx)
 
         from src.config import settings

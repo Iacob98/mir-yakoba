@@ -78,15 +78,22 @@ class NotificationService:
         if post.excerpt:
             # Truncate excerpt if too long
             excerpt = post.excerpt[:200] + "..." if len(post.excerpt) > 200 else post.excerpt
-            message += f"{excerpt}\n\n"
+            message += f"{excerpt}"
 
-        message += f'<a href="{post_url}">Читать пост</a>'
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="Читать пост", url=post_url)]
+        ])
 
         # Send notifications
         success_count = 0
         for user in users:
             try:
-                await bot.send_message(user.telegram_id, message, parse_mode=ParseMode.HTML)
+                await bot.send_message(
+                    user.telegram_id,
+                    message,
+                    parse_mode=ParseMode.HTML,
+                    reply_markup=keyboard
+                )
                 success_count += 1
                 # Small delay to avoid rate limiting
                 await asyncio.sleep(0.05)
@@ -108,8 +115,8 @@ class NotificationService:
 
 async def notify_post_published(db: AsyncSession, post: Post) -> int:
     """Helper function to notify about published post."""
-    # Disabled - no post notifications
-    return 0
+    service = NotificationService(db)
+    return await service.notify_new_post(post)
 
 
 async def notify_admin_new_comment(
