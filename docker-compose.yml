@@ -68,6 +68,7 @@ services:
       - ./uploads:/app/uploads
       - ./src:/app/src:ro
       - ./scripts:/app/scripts:ro
+      - telegram-api-data:/var/lib/telegram-bot-api:ro
     depends_on:
       db:
         condition: service_healthy
