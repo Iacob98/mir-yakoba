@@ -9,8 +9,7 @@ from src.config import settings
 # Create session for local API server if configured
 session = None
 if settings.telegram_api_server:
-    api = TelegramAPIServer.from_base(settings.telegram_api_server)
-    api.is_local = True
+    api = TelegramAPIServer.from_base(settings.telegram_api_server, is_local=True)
     session = AiohttpSession(api=api)
 
 # Create bot instance
