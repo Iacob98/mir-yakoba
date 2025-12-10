@@ -2,9 +2,15 @@ from aiogram import Router, F
 from aiogram.filters import Command, CommandStart
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
 
 from src.db.session import get_db_context
 from src.services.auth import AuthService
+from src.services.user import UserService
+
+
+class NicknameChange(StatesGroup):
+    waiting_for_nickname = State()
 
 router = Router()
 
@@ -12,6 +18,7 @@ router = Router()
 def get_main_menu_keyboard(is_admin: bool = False) -> InlineKeyboardMarkup:
     """Get main menu keyboard based on user role."""
     buttons = [
+        [InlineKeyboardButton(text="✏️ Сменить ник", callback_data="menu_nickname")],
         [InlineKeyboardButton(text="🔐 Получить код входа", callback_data="menu_login")],
     ]
     if is_admin:
@@ -214,3 +221,65 @@ async def callback_menu_back_clear(callback: CallbackQuery, state: FSMContext):
         reply_markup=get_main_menu_keyboard(is_admin),
     )
     await callback.answer()
+
+
+@router.callback_query(F.data == "menu_nickname")
+async def callback_menu_nickname(callback: CallbackQuery, state: FSMContext):
+    """Handle nickname change button from menu."""
+    user = callback.from_user
+
+    async with get_db_context() as db:
+        auth_service = AuthService(db)
+        existing_user = await auth_service.get_user_by_telegram_id(user.id)
+
+        if not existing_user:
+            await callback.answer("❌ Пользователь не найден", show_alert=True)
+            return
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Отмена", callback_data="menu_back_clear")]
+        ])
+
+        await state.set_state(NicknameChange.waiting_for_nickname)
+        await callback.message.edit_text(
+            f"✏️ <b>Смена ника</b>\n\n"
+            f"Текущий ник: <b>{existing_user.display_name}</b>\n\n"
+            f"Введите новый ник:",
+            reply_markup=keyboard,
+        )
+
+    await callback.answer()
+
+
+@router.message(NicknameChange.waiting_for_nickname)
+async def process_nickname_change(message: Message, state: FSMContext):
+    """Process new nickname input."""
+    user = message.from_user
+    new_nickname = message.text.strip() if message.text else ""
+
+    async with get_db_context() as db:
+        auth_service = AuthService(db)
+        user_service = UserService(db)
+
+        existing_user = await auth_service.get_user_by_telegram_id(user.id)
+
+        if not existing_user:
+            await message.answer("❌ Пользователь не найден")
+            await state.clear()
+            return
+
+        try:
+            await user_service.update_display_name(existing_user.id, new_nickname)
+            await state.clear()
+            await message.answer(
+                f"✅ Ник успешно изменён на <b>{new_nickname}</b>!",
+                reply_markup=get_main_menu_keyboard(existing_user.is_admin),
+            )
+        except ValueError as e:
+            keyboard = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="◀️ Отмена", callback_data="menu_back_clear")]
+            ])
+            await message.answer(
+                f"❌ {str(e)}\n\nПопробуйте ещё раз:",
+                reply_markup=keyboard,
+            )

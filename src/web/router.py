@@ -54,6 +54,43 @@ async def login_page(request: Request):
     )
 
 
+@web_router.get("/profile", response_class=HTMLResponse)
+async def profile_page(
+    request: Request,
+    user=Depends(require_user),
+):
+    """User profile page."""
+    return templates.TemplateResponse(
+        "pages/profile.html",
+        {"request": request, "title": "Профиль", "user": user},
+    )
+
+
+@web_router.post("/profile/update-nickname")
+async def update_nickname(
+    request: Request,
+    display_name: str = Form(...),
+    user=Depends(require_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Update user's display name."""
+    user_service = UserService(db)
+    error = None
+    success = None
+
+    try:
+        await user_service.update_display_name(user.id, display_name)
+        success = "Ник успешно изменён"
+        user.display_name = display_name.strip()
+    except ValueError as e:
+        error = str(e)
+
+    return templates.TemplateResponse(
+        "pages/profile.html",
+        {"request": request, "title": "Профиль", "user": user, "error": error, "success": success},
+    )
+
+
 @web_router.get("/partials/posts", response_class=HTMLResponse)
 async def posts_partial(
     request: Request,
@@ -87,6 +124,20 @@ async def posts_partial(
             "next_page": next_page,
         },
     )
+
+
+async def require_user(
+    session: Optional[str] = Cookie(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Require authenticated user, redirect to login if not."""
+    if not session:
+        raise HTTPException(status_code=302, headers={"Location": "/login"})
+    auth_service = AuthService(db)
+    user = await auth_service.get_user_by_session_token(session)
+    if not user:
+        raise HTTPException(status_code=302, headers={"Location": "/login"})
+    return user
 
 
 async def require_admin(

@@ -30,7 +30,7 @@
                         {% if user.is_admin %}
                         <a href="/admin" class="text-gray-600 hover:text-gray-900">Админ</a>
                         {% endif %}
-                        <span class="text-gray-500">{{ user.display_name }}</span>
+                        <a href="/profile" class="text-gray-500 hover:text-gray-700">{{ user.display_name }}</a>
                         <form action="/api/v1/auth/logout" method="POST" class="inline" hx-boost="false">
                             <button type="submit" class="text-gray-600 hover:text-gray-900">Выйти</button>
                         </form>
@@ -56,7 +56,7 @@
                         {% if user.is_admin %}
                         <a href="/admin" class="text-gray-600 hover:text-gray-900 py-2">Админ</a>
                         {% endif %}
-                        <span class="text-gray-500 py-2">{{ user.display_name }}</span>
+                        <a href="/profile" class="text-gray-500 hover:text-gray-700 py-2">{{ user.display_name }}</a>
                         <form action="/api/v1/auth/logout" method="POST" hx-boost="false">
                             <button type="submit" class="text-gray-600 hover:text-gray-900 py-2 w-full text-left">Выйти</button>
                         </form>

@@ -162,3 +162,22 @@ class UserService:
             )
             counts[level.name.lower()] = result.scalar() or 0
         return counts
+
+    async def update_display_name(
+        self, user_id: UUID, new_display_name: str
+    ) -> Optional[User]:
+        """Update user's display name."""
+        user = await self.get_by_id(user_id)
+        if not user:
+            return None
+
+        new_display_name = new_display_name.strip()
+        if not new_display_name:
+            raise ValueError("Ник не может быть пустым")
+        if len(new_display_name) > 128:
+            raise ValueError("Ник слишком длинный (макс. 128 символов)")
+
+        user.display_name = new_display_name
+        await self.db.commit()
+        await self.db.refresh(user)
+        return user
