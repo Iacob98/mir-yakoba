@@ -56,5 +56,7 @@ class Media(Base):
     )
 
     # Relationships
-    post: Mapped[Optional["Post"]] = relationship("Post", back_populates="media")
+    post: Mapped[Optional["Post"]] = relationship(
+        "Post", back_populates="media", foreign_keys=[post_id]
+    )
     uploader: Mapped[Optional["User"]] = relationship("User", lazy="selectin")
