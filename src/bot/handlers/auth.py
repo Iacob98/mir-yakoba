@@ -1,6 +1,7 @@
 from aiogram import Router, F
+from aiogram.enums import ParseMode
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message
+from aiogram.types import Message, InlineKeyboardButton, InlineKeyboardMarkup
 
 from src.db.session import get_db_context
 from src.services.auth import AuthService
@@ -83,6 +84,39 @@ async def cmd_help(message: Message):
         "/start - Запустить бота\n"
         "/login - Получить код для входа на сайт\n"
         "/newpost - Создать новый пост (для админов)\n"
+        "/testnotify - Тестовое уведомление (для админов)\n"
         "/cancel - Отменить текущее действие\n"
         "/help - Показать эту справку"
+    )
+
+
+@router.message(Command("testnotify"))
+async def cmd_test_notify(message: Message):
+    """Handle /testnotify command - send test notification (admin only)."""
+    user = message.from_user
+
+    async with get_db_context() as db:
+        auth_service = AuthService(db)
+        existing_user = await auth_service.get_user_by_telegram_id(user.id)
+
+        if not existing_user or not existing_user.is_admin:
+            await message.answer("❌ Эта команда доступна только администраторам.")
+            return
+
+    # Send test notification that looks like a real post notification
+    test_message = (
+        "<b>Новый пост в Мире Якоба!</b>\n\n"
+        "<b>Пример заголовка поста</b>\n\n"
+        "Это тестовое уведомление, которое показывает как будет "
+        "выглядеть уведомление о новом посте для пользователей."
+    )
+
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="Читать пост", url="https://google.com")]
+    ])
+
+    await message.answer(
+        test_message,
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard
     )

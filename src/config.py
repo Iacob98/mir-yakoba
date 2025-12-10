@@ -32,9 +32,9 @@ class Settings(BaseSettings):
 
     # File storage
     upload_dir: Path = Path("./uploads")
-    max_image_size: int = 10 * 1024 * 1024  # 10MB
-    max_audio_size: int = 50 * 1024 * 1024  # 50MB
-    max_video_size: int = 100 * 1024 * 1024  # 100MB
+    max_image_size: int = 2 * 1024 * 1024 * 1024  # 2GB (no practical limit)
+    max_audio_size: int = 2 * 1024 * 1024 * 1024  # 2GB (no practical limit)
+    max_video_size: int = 2 * 1024 * 1024 * 1024  # 2GB (no practical limit)
 
     # Session
     session_expire_days: int = 30
