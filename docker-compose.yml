@@ -22,8 +22,8 @@ services:
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
       - TELEGRAM_WEBHOOK_SECRET=${TELEGRAM_WEBHOOK_SECRET:-}
       - SECRET_KEY=${SECRET_KEY:-development-secret-key-change-in-production}
-      - DEBUG=true
-      - BASE_URL=http://localhost:8000
+      - DEBUG=${DEBUG:-false}
+      - BASE_URL=${BASE_URL:-http://localhost:8000}
       - UPLOAD_DIR=/app/uploads
     volumes:
       - ./uploads:/app/uploads
