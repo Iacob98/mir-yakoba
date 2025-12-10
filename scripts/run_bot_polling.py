@@ -20,12 +20,23 @@ async def main():
     # Import and configure bot
     from aiogram import Bot, Dispatcher
     from aiogram.client.default import DefaultBotProperties
+    from aiogram.client.session.aiohttp import AiohttpSession
+    from aiogram.client.telegram import TelegramAPIServer
     from aiogram.enums import ParseMode
     from aiogram.fsm.storage.redis import RedisStorage
+
+    # Create session for local API server if configured
+    session = None
+    if settings.telegram_api_server:
+        api = TelegramAPIServer.from_base(settings.telegram_api_server)
+        api.is_local = True
+        session = AiohttpSession(api=api)
+        print(f"Using local Telegram API server: {settings.telegram_api_server}")
 
     bot = Bot(
         token=settings.telegram_bot_token,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+        session=session,
     )
 
     # Use Redis storage for FSM to persist state across restarts

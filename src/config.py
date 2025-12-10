@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # Telegram
     telegram_bot_token: str
     telegram_webhook_secret: Optional[str] = None
+    telegram_api_server: Optional[str] = None  # Local API server URL
 
     # OpenAI (for Whisper transcription)
     openai_api_key: Optional[str] = None
