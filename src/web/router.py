@@ -32,6 +32,20 @@ async def get_current_user_optional(
     return await auth_service.get_user_by_session_token(session)
 
 
+async def require_user(
+    session: Optional[str] = Cookie(None),
+    db: AsyncSession = Depends(get_db),
+):
+    """Require authenticated user, redirect to login if not."""
+    if not session:
+        raise HTTPException(status_code=302, headers={"Location": "/login"})
+    auth_service = AuthService(db)
+    user = await auth_service.get_user_by_session_token(session)
+    if not user:
+        raise HTTPException(status_code=302, headers={"Location": "/login"})
+    return user
+
+
 @web_router.get("/", response_class=HTMLResponse)
 async def home(
     request: Request,
@@ -124,20 +138,6 @@ async def posts_partial(
             "next_page": next_page,
         },
     )
-
-
-async def require_user(
-    session: Optional[str] = Cookie(None),
-    db: AsyncSession = Depends(get_db),
-):
-    """Require authenticated user, redirect to login if not."""
-    if not session:
-        raise HTTPException(status_code=302, headers={"Location": "/login"})
-    auth_service = AuthService(db)
-    user = await auth_service.get_user_by_session_token(session)
-    if not user:
-        raise HTTPException(status_code=302, headers={"Location": "/login"})
-    return user
 
 
 async def require_admin(
