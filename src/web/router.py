@@ -240,6 +240,7 @@ async def admin_update_post(
     status: str = Form("draft"),
     media_ids: str = Form(""),
     content_blocks: str = Form(""),
+    cover_image_id: str = Form(""),
     user=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -256,6 +257,14 @@ async def admin_update_post(
         except json.JSONDecodeError:
             pass
 
+    # Parse cover_image_id
+    cover_uuid = None
+    if cover_image_id.strip():
+        try:
+            cover_uuid = UUID(cover_image_id.strip())
+        except ValueError:
+            pass
+
     post_service = PostService(db)
 
     # Check if post is being published for the first time
@@ -270,6 +279,7 @@ async def admin_update_post(
         visibility=PostVisibility(visibility),
         status=PostStatus(status),
         content_blocks=blocks_data,
+        cover_image_id=cover_uuid,
     )
 
     if not post:

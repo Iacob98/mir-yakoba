@@ -15,6 +15,7 @@
         <input type="hidden" name="media_ids" id="media-ids" value="">
         <input type="hidden" name="content_blocks" id="content-blocks" value="">
         <input type="hidden" name="content_md" id="content-md" value="{{ post.content_md if post else '' }}">
+        <input type="hidden" name="cover_image_id" id="cover-image-id" value="{{ post.cover_image_id if post and post.cover_image_id else '' }}">
 
         <!-- Title -->
         <div>
@@ -42,6 +43,37 @@
                       name="excerpt"
                       rows="2"
                       class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500">{{ post.excerpt if post else '' }}</textarea>
+        </div>
+
+        <!-- Cover Image -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Обложка поста</label>
+            <div class="border rounded-lg p-4 bg-gray-50">
+                <div id="cover-preview" class="mb-3">
+                    {% if post and post.cover_image %}
+                    <img src="/uploads/{{ post.cover_image.file_path }}" alt="Обложка" class="max-h-48 rounded-lg object-cover">
+                    {% else %}
+                    <p class="text-gray-400 text-sm">Обложка не выбрана</p>
+                    {% endif %}
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <input type="file"
+                           id="cover-file"
+                           accept="image/*"
+                           class="block w-full sm:w-auto text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    <button type="button"
+                            id="upload-cover-btn"
+                            class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm">
+                        Загрузить обложку
+                    </button>
+                    <button type="button"
+                            id="remove-cover-btn"
+                            class="px-4 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 text-sm {% if not post or not post.cover_image %}hidden{% endif %}">
+                        Убрать обложку
+                    </button>
+                </div>
+                <span id="cover-status" class="text-sm text-gray-500 mt-2 block"></span>
+            </div>
         </div>
 
         <!-- Media Upload Section (for legacy/additional media) -->
@@ -158,6 +190,12 @@
     var mediaIdsInput = document.getElementById('media-ids');
     var contentBlocksInput = document.getElementById('content-blocks');
     var contentMdInput = document.getElementById('content-md');
+    var coverImageIdInput = document.getElementById('cover-image-id');
+    var coverPreview = document.getElementById('cover-preview');
+    var coverFileInput = document.getElementById('cover-file');
+    var uploadCoverBtn = document.getElementById('upload-cover-btn');
+    var removeCoverBtn = document.getElementById('remove-cover-btn');
+    var coverStatusEl = document.getElementById('cover-status');
     var postId = '{{ post.id if post else "" }}';
 
     // Initialize Editor.js
@@ -427,6 +465,83 @@
         };
 
         xhr.send(formData);
+    };
+
+    // Cover image upload
+    uploadCoverBtn.onclick = function() {
+        var file = coverFileInput.files[0];
+        if (!file) {
+            alert('Сначала выберите изображение для обложки');
+            return;
+        }
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        uploadCoverBtn.disabled = true;
+        coverStatusEl.textContent = 'Загрузка...';
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/v1/media/upload', true);
+        xhr.withCredentials = true;
+
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                // Parse media ID from response
+                var tempDiv = document.createElement('div');
+                tempDiv.insertAdjacentHTML('beforeend', xhr.responseText);
+                var mediaItem = tempDiv.querySelector('[data-media-id]');
+                if (mediaItem) {
+                    var mediaId = mediaItem.getAttribute('data-media-id');
+                    var imgEl = mediaItem.querySelector('img');
+                    var imgSrc = imgEl ? imgEl.getAttribute('src') : '';
+
+                    coverImageIdInput.value = mediaId;
+
+                    // Clear and rebuild preview safely
+                    while (coverPreview.firstChild) {
+                        coverPreview.removeChild(coverPreview.firstChild);
+                    }
+                    var newImg = document.createElement('img');
+                    newImg.src = imgSrc;
+                    newImg.alt = 'Обложка';
+                    newImg.className = 'max-h-48 rounded-lg object-cover';
+                    coverPreview.appendChild(newImg);
+
+                    removeCoverBtn.classList.remove('hidden');
+                    coverStatusEl.textContent = 'Обложка загружена!';
+                } else {
+                    coverStatusEl.textContent = 'Ошибка: не удалось получить ID';
+                }
+                coverFileInput.value = '';
+            } else {
+                coverStatusEl.textContent = 'Ошибка: ' + xhr.status;
+                alert('Ошибка загрузки: ' + xhr.responseText);
+            }
+            uploadCoverBtn.disabled = false;
+        };
+
+        xhr.onerror = function() {
+            coverStatusEl.textContent = 'Ошибка сети';
+            alert('Ошибка сети при загрузке');
+            uploadCoverBtn.disabled = false;
+        };
+
+        xhr.send(formData);
+    };
+
+    // Remove cover image
+    removeCoverBtn.onclick = function() {
+        coverImageIdInput.value = '';
+        while (coverPreview.firstChild) {
+            coverPreview.removeChild(coverPreview.firstChild);
+        }
+        var placeholder = document.createElement('p');
+        placeholder.className = 'text-gray-400 text-sm';
+        placeholder.textContent = 'Обложка не выбрана';
+        coverPreview.appendChild(placeholder);
+        removeCoverBtn.classList.add('hidden');
+        coverStatusEl.textContent = 'Обложка убрана';
     };
 })();
 </script>

@@ -329,6 +329,7 @@ class PostService:
         status=None,
         excerpt: Optional[str] = None,
         content_blocks: Optional[dict] = None,
+        cover_image_id: Optional[UUID] = None,
     ) -> Optional[Post]:
         """Update a post."""
         # Handle string post_id
@@ -371,6 +372,9 @@ class PostService:
                 post.published_at = datetime.now(timezone.utc)
         if excerpt:
             post.excerpt = excerpt
+
+        # Update cover_image_id (can be UUID or None)
+        post.cover_image_id = cover_image_id
 
         await self.db.commit()
         await self.db.refresh(post)

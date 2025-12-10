@@ -82,16 +82,38 @@ class Post(Base, TimestampMixin):
         Integer, nullable=True
     )
 
+    # Cover image
+    cover_image_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("media.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+
     # Relationships
     author: Mapped[Optional["User"]] = relationship(
         "User", back_populates="posts", lazy="selectin"
     )
     media: Mapped[list["Media"]] = relationship(
-        "Media", back_populates="post", lazy="selectin", cascade="all, delete-orphan"
+        "Media", back_populates="post", lazy="selectin", cascade="all, delete-orphan",
+        foreign_keys="Media.post_id"
     )
     comments: Mapped[list["Comment"]] = relationship(
         "Comment", back_populates="post", lazy="selectin", cascade="all, delete-orphan"
     )
+    cover_image: Mapped[Optional["Media"]] = relationship(
+        "Media", foreign_keys=[cover_image_id], lazy="selectin"
+    )
+
+    @property
+    def featured_image(self) -> Optional[str]:
+        """Get cover image URL or first image from media."""
+        if self.cover_image:
+            return f"/uploads/{self.cover_image.file_path}"
+        # Fallback to first image in media
+        for m in self.media:
+            if m.media_type.value == "image":
+                return f"/uploads/{m.file_path}"
+        return None
 
     __table_args__ = (
         Index("ix_posts_search_vector", "search_vector", postgresql_using="gin"),
