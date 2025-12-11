@@ -21,6 +21,7 @@ class PostCreation(StatesGroup):
     confirm_save_audio = State()        # NEW: подтверждение сохранения аудио
     waiting_for_visibility = State()
     waiting_for_media = State()
+    waiting_for_publish_choice = State()  # Черновик или опубликовать
 
 
 @router.message(Command("newpost"))
@@ -724,8 +725,40 @@ async def _save_telegram_media(
 @router.callback_query(F.data == "media_done", PostCreation.waiting_for_media)
 @router.callback_query(F.data == "media_skip", PostCreation.waiting_for_media)
 async def process_media_done(callback: CallbackQuery, state: FSMContext):
-    """Finish media upload and create post."""
+    """Finish media upload and ask about publishing."""
+    from aiogram.exceptions import TelegramBadRequest
+
+    await state.set_state(PostCreation.waiting_for_publish_choice)
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text="🚀 Опубликовать сейчас", callback_data="publish_now")
+    builder.button(text="📝 Сохранить как черновик", callback_data="publish_draft")
+    builder.adjust(1)
+
+    try:
+        await callback.message.edit_text(
+            "📄 <b>Последний шаг</b>\n\n"
+            "Выберите действие:",
+            reply_markup=builder.as_markup(),
+        )
+    except TelegramBadRequest:
+        await callback.message.answer(
+            "📄 <b>Последний шаг</b>\n\n"
+            "Выберите действие:",
+            reply_markup=builder.as_markup(),
+        )
+
+    try:
+        await callback.answer()
+    except TelegramBadRequest:
+        pass
+
+
+@router.callback_query(F.data.in_({"publish_now", "publish_draft"}), PostCreation.waiting_for_publish_choice)
+async def process_publish_choice(callback: CallbackQuery, state: FSMContext):
+    """Create post with chosen status."""
     data = await state.get_data()
+    publish_now = callback.data == "publish_now"
     await state.clear()
 
     from src.services.post import PostService
@@ -741,7 +774,7 @@ async def process_media_done(callback: CallbackQuery, state: FSMContext):
             await callback.message.edit_text("❌ Пользователь не найден.")
             return
 
-        from src.db.models.post import PostVisibility
+        from src.db.models.post import PostVisibility, PostStatus
 
         post_service = PostService(db)
         post = await post_service.create_post(
@@ -750,6 +783,16 @@ async def process_media_done(callback: CallbackQuery, state: FSMContext):
             content_md=data["content"],
             visibility=PostVisibility(data["visibility"]),
         )
+
+        # Publish if requested
+        if publish_now:
+            await post_service.publish_post(post.id)
+            status_text = "Опубликован"
+            # Send notifications
+            from src.services.notification import notify_post_published
+            await notify_post_published(db, post)
+        else:
+            status_text = "Черновик"
 
         media_service = MediaService(db)
 
@@ -785,7 +828,7 @@ async def process_media_done(callback: CallbackQuery, state: FSMContext):
                 f"✅ <b>Пост создан!</b>\n\n"
                 f"📝 {post.title}\n"
                 f"👁 Видимость: {data['visibility']}\n"
-                f"📄 Статус: Черновик{media_text}\n\n"
+                f"📄 Статус: {status_text}{media_text}\n\n"
                 f"<a href='{post_url}'>Открыть пост</a>"
             )
         except TelegramBadRequest:
@@ -793,7 +836,7 @@ async def process_media_done(callback: CallbackQuery, state: FSMContext):
                 f"✅ <b>Пост создан!</b>\n\n"
                 f"📝 {post.title}\n"
                 f"👁 Видимость: {data['visibility']}\n"
-                f"📄 Статус: Черновик{media_text}\n\n"
+                f"📄 Статус: {status_text}{media_text}\n\n"
                 f"<a href='{post_url}'>Открыть пост</a>"
             )
 
@@ -806,7 +849,7 @@ async def process_media_done(callback: CallbackQuery, state: FSMContext):
 # ============= FALLBACK HANDLER =============
 # Must be at the END so it only catches callbacks that weren't handled by specific handlers
 
-@router.callback_query(F.data.in_({"media_done", "media_skip"}))
+@router.callback_query(F.data.in_({"media_done", "media_skip", "publish_now", "publish_draft"}))
 @router.callback_query(F.data.startswith("vis_"))
 @router.callback_query(F.data.startswith("audio_save_"))
 @router.callback_query(F.data.startswith("post_type_"))
