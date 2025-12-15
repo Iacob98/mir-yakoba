@@ -7,7 +7,7 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.bot.bot import bot
+from src.bot.instance import bot
 from src.config import settings
 from src.db.models.post import Post, PostVisibility
 from src.db.models.user import AccessLevel, User
