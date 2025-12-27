@@ -786,7 +786,7 @@ async def process_publish_choice(callback: CallbackQuery, state: FSMContext):
 
         # Publish if requested
         if publish_now:
-            await post_service.publish_post(post.id)
+            post = await post_service.publish_post(post.id)
             status_text = "Опубликован"
             # Send notifications
             from src.services.notification import notify_post_published
