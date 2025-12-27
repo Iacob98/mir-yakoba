@@ -1,6 +1,7 @@
 import asyncio
 import logging
 from typing import Optional
+from urllib.parse import quote
 
 from aiogram.enums import ParseMode
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
@@ -61,7 +62,7 @@ class NotificationService:
             return 0
 
         # Build notification message
-        post_url = f"{settings.base_url}/posts/{post.slug}"
+        post_url = f"{settings.base_url}/posts/{quote(post.slug, safe='')}"
 
         visibility_emoji = {
             PostVisibility.PUBLIC: "",
@@ -138,7 +139,7 @@ async def notify_admin_new_comment(
 
     # Truncate comment if too long
     preview = comment_content[:150] + "..." if len(comment_content) > 150 else comment_content
-    post_url = f"{settings.base_url}/posts/{post_slug}"
+    post_url = f"{settings.base_url}/posts/{quote(post_slug, safe='')}"
 
     message = (
         f"💬 <b>Новый комментарий</b>\n\n"
@@ -186,7 +187,7 @@ async def notify_comment_reply(
         return False
 
     preview = reply_content[:150] + "..." if len(reply_content) > 150 else reply_content
-    post_url = f"{settings.base_url}/posts/{post_slug}"
+    post_url = f"{settings.base_url}/posts/{quote(post_slug, safe='')}"
 
     message = (
         f"💬 <b>Ответ на ваш комментарий</b>\n\n"
