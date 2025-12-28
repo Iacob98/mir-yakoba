@@ -45,13 +45,11 @@
 </div>
 
 {% if has_more %}
-<div class="text-center py-4">
-    <button hx-get="/partials/posts?page={{ next_page }}"
-            hx-target="#posts-container"
-            hx-swap="innerHTML"
-            class="bg-gray-100 text-gray-700 px-6 py-2 rounded-lg hover:bg-gray-200 transition">
-        Загрузить ещё
-    </button>
+<div hx-get="/partials/posts?page={{ next_page }}"
+     hx-trigger="revealed"
+     hx-swap="outerHTML"
+     class="flex justify-center py-8">
+    <div class="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
 </div>
 {% endif %}
 
