@@ -136,6 +136,7 @@ async def posts_partial(
             "posts": posts,
             "has_more": has_more,
             "next_page": next_page,
+            "page": page,
         },
     )
 
