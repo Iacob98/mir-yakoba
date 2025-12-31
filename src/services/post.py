@@ -5,7 +5,7 @@ from uuid import UUID
 
 import bleach
 import markdown
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.models.post import Post, PostStatus, PostVisibility
@@ -304,12 +304,12 @@ class PostService:
         total = (await self.db.execute(count_query)).scalar() or 0
 
         # Get page - pinned posts first, then by date
+        # Use COALESCE so drafts (NULL published_at) sort by created_at
         query = (
             query.order_by(
                 Post.is_pinned.desc(),
                 Post.pinned_at.desc().nullslast(),
-                Post.published_at.desc().nullslast(),
-                Post.created_at.desc()
+                func.coalesce(Post.published_at, Post.created_at).desc(),
             )
             .offset((page - 1) * per_page)
             .limit(per_page)
