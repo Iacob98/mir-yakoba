@@ -19,6 +19,9 @@
                   hx-target="#login-form"
                   hx-swap="innerHTML"
                   class="space-y-4">
+                {% if next %}
+                <input type="hidden" name="next" value="{{ next }}">
+                {% endif %}
                 <div>
                     <label for="code" class="block text-sm font-medium text-gray-700 mb-1">
                         Код входа

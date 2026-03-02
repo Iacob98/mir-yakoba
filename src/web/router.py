@@ -61,10 +61,10 @@ async def home(
 
 
 @web_router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request):
+async def login_page(request: Request, next: str = ""):
     return templates.TemplateResponse(
         "pages/login.html",
-        {"request": request, "title": "Login"},
+        {"request": request, "title": "Login", "next": next},
     )
 
 
@@ -647,6 +647,18 @@ async def post_detail(
     post = await post_service.get_post_by_slug(slug, user_access_level=user_access)
 
     if not post:
+        # Check if the post exists but user lacks access
+        existing = await post_service.get_by_slug(slug)
+        if existing and existing.status == PostStatus.PUBLISHED:
+            if not user:
+                # Not logged in — redirect to login, then back to post
+                return RedirectResponse(url=f"/login?next=/posts/{slug}", status_code=302)
+            # Logged in but insufficient access level
+            return templates.TemplateResponse(
+                "pages/post_detail.html",
+                {"request": request, "user": user, "post": None, "access_denied": True},
+                status_code=403,
+            )
         raise HTTPException(status_code=404, detail="Пост не найден")
 
     # Increment view count

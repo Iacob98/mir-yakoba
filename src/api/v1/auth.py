@@ -159,6 +159,7 @@ async def verify_by_code_only(
     request: Request,
     response: Response,
     code: str = Form(...),
+    next: str = Form(""),
     db: AsyncSession = Depends(get_db),
 ):
     """Verify login code (finds telegram_id from code). Returns HTML for htmx."""
@@ -224,7 +225,12 @@ async def verify_by_code_only(
         samesite="lax",
     )
 
-    # Tell htmx to do a full page redirect
-    html_response.headers["HX-Redirect"] = "/"
+    # Redirect to the original page or home
+    # Only allow relative paths to prevent open redirect
+    redirect_url = "/"
+    if next and next.startswith("/"):
+        redirect_url = next
+
+    html_response.headers["HX-Redirect"] = redirect_url
 
     return html_response
