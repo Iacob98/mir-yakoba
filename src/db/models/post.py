@@ -25,6 +25,11 @@ if TYPE_CHECKING:
     from src.db.models.user import User
 
 
+class PostType(str, enum.Enum):
+    ARTICLE = "article"
+    ARTWORK = "artwork"
+
+
 class PostStatus(str, enum.Enum):
     DRAFT = "draft"
     PUBLISHED = "published"
@@ -63,6 +68,12 @@ class Post(Base, TimestampMixin):
         Enum(PostStatus, name="post_status"),
         default=PostStatus.DRAFT,
         nullable=False,
+    )
+    post_type: Mapped[PostType] = mapped_column(
+        Enum(PostType, name="post_type"),
+        default=PostType.ARTICLE,
+        nullable=False,
+        server_default="article",
     )
 
     view_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

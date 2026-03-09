@@ -8,7 +8,7 @@ import markdown
 from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.db.models.post import Post, PostStatus, PostVisibility
+from src.db.models.post import Post, PostStatus, PostType, PostVisibility
 from src.db.models.user import AccessLevel
 
 # Constants
@@ -146,6 +146,7 @@ class PostService:
         status: PostStatus = PostStatus.DRAFT,
         excerpt: Optional[str] = None,
         content_blocks: Optional[dict] = None,
+        post_type: PostType = PostType.ARTICLE,
     ) -> Post:
         """Create a new post."""
         # Validate title length
@@ -187,6 +188,7 @@ class PostService:
             excerpt=excerpt,
             visibility=visibility,
             status=status,
+            post_type=post_type,
         )
 
         # Set published_at if publishing immediately
@@ -270,6 +272,7 @@ class PostService:
         page: int = 1,
         per_page: int = 10,
         include_drafts: bool = False,
+        post_type: Optional[PostType] = None,
     ) -> tuple[list[Post], int]:
         """List posts with pagination and access level filtering."""
         # Map access levels to allowed visibilities
@@ -295,6 +298,9 @@ class PostService:
 
         # Build query
         query = select(Post).where(Post.visibility.in_(allowed_visibilities))
+
+        if post_type is not None:
+            query = query.where(Post.post_type == post_type)
 
         if not include_drafts:
             query = query.where(Post.status == PostStatus.PUBLISHED)
@@ -330,6 +336,7 @@ class PostService:
         excerpt: Optional[str] = None,
         content_blocks: Optional[dict] = None,
         cover_image_id: Optional[UUID] = None,
+        post_type: Optional[PostType] = None,
     ) -> Optional[Post]:
         """Update a post."""
         # Handle string post_id
@@ -372,6 +379,9 @@ class PostService:
                 post.published_at = datetime.now(timezone.utc)
         if excerpt:
             post.excerpt = excerpt
+
+        if post_type is not None:
+            post.post_type = post_type
 
         # Update cover_image_id (can be UUID or None)
         post.cover_image_id = cover_image_id

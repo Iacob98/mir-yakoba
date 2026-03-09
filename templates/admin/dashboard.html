@@ -57,6 +57,7 @@
                             <span class="{% if post.status.value == 'published' %}text-green-600{% else %}text-yellow-600{% endif %}">
                                 {% if post.status.value == 'published' %}Опубликован{% elif post.status.value == 'draft' %}Черновик{% else %}Архив{% endif %}
                             </span>
+                            · {% if post.post_type.value == 'artwork' %}Работа{% else %}Статья{% endif %}
                             · {{ post.visibility.value | title }}
                             · {{ post.created_at.strftime('%d.%m.%Y') }}
                         </div>

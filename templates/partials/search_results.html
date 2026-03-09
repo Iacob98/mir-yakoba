@@ -1,40 +1,39 @@
 {% if query %}
     {% if posts %}
-    <p class="text-gray-600 mb-4">Found {{ total }} result{% if total != 1 %}s{% endif %} for "{{ query }}"</p>
-    <div class="space-y-4">
+    <p class="text-sm text-gray-400 mb-6">Найдено {{ total }} результат{% if total != 1 %}ов{% endif %}</p>
+    <div class="space-y-6">
         {% for post in posts %}
-        <article class="bg-white rounded-lg shadow p-4 hover:shadow-md transition">
-            <h2 class="text-xl font-semibold mb-2">
-                <a href="/posts/{{ post.slug }}" class="hover:text-blue-600">{{ post.title }}</a>
-            </h2>
-            {% if post.excerpt %}
-            <p class="text-gray-600 text-sm mb-2">{{ post.excerpt }}</p>
-            {% endif %}
-            <div class="flex items-center text-xs text-gray-500 space-x-3">
-                {% if post.published_at %}
-                <span>{{ post.published_at.strftime('%B %d, %Y') }}</span>
+        <a href="/posts/{{ post.slug }}" class="group block">
+            <article class="flex gap-5 items-start">
+                {% if post.featured_image %}
+                <div class="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden">
+                    <img src="{{ post.featured_image }}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
+                </div>
                 {% endif %}
-                <span>{{ post.view_count }} views</span>
-                {% if post.visibility.value != 'public' %}
-                <span class="px-2 py-0.5 rounded-full
-                    {% if post.visibility.value == 'premium_2' %}bg-purple-100 text-purple-700
-                    {% elif post.visibility.value == 'premium_1' %}bg-blue-100 text-blue-700
-                    {% else %}bg-gray-100 text-gray-700{% endif %}">
-                    {{ post.visibility.value | replace('_', ' ') | title }}
-                </span>
-                {% endif %}
-            </div>
-        </article>
+                <div class="flex-1 min-w-0">
+                    <h2 class="font-bold text-lg group-hover:text-gray-600 transition line-clamp-2">{{ post.title }}</h2>
+                    {% if post.excerpt %}
+                    <p class="text-gray-500 text-sm mt-1 line-clamp-2">{{ post.excerpt }}</p>
+                    {% endif %}
+                    <div class="flex items-center gap-3 text-xs text-gray-300 mt-2">
+                        {% if post.published_at %}
+                        <span>{{ post.published_at.strftime('%d.%m.%Y') }}</span>
+                        {% endif %}
+                        <span>{{ post.view_count }} просмотров</span>
+                    </div>
+                </div>
+            </article>
+        </a>
         {% endfor %}
     </div>
     {% else %}
-    <div class="text-center py-12 text-gray-500">
-        <p class="text-xl mb-2">No results found</p>
-        <p>Try different keywords or check your spelling</p>
+    <div class="text-center py-16">
+        <p class="text-gray-400 text-lg mb-2">Ничего не найдено</p>
+        <p class="text-gray-300 text-sm">Попробуйте другие ключевые слова</p>
     </div>
     {% endif %}
 {% else %}
-<div class="text-center py-12 text-gray-400">
-    <p>Enter a search term to find posts</p>
+<div class="text-center py-16 text-gray-300">
+    <p>Введите запрос для поиска</p>
 </div>
 {% endif %}

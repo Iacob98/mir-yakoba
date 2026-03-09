@@ -7,61 +7,117 @@
     <link rel="icon" type="image/png" href="/static/favicon.png">
     <link rel="apple-touch-icon" href="/static/favicon.png">
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+        theme: {
+            extend: {
+                fontFamily: {
+                    sans: ['Inter', 'system-ui', 'sans-serif'],
+                    serif: ['Playfair Display', 'Georgia', 'serif'],
+                },
+                colors: {
+                    accent: {
+                        50: '#faf5ff',
+                        100: '#f3e8ff',
+                        200: '#e9d5ff',
+                        500: '#a855f7',
+                        600: '#9333ea',
+                        700: '#7e22ce',
+                    }
+                }
+            }
+        }
+    }
+    </script>
 
     <!-- htmx -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
+    <style>
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .line-clamp-3 { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+        /* Smooth page transitions */
+        .htmx-settling { opacity: 0; }
+        .htmx-added { opacity: 0; transition: opacity 0.3s ease-in; }
+        .htmx-added.htmx-settling { opacity: 1; }
+
+        /* Masonry gallery */
+        .masonry { columns: 2; column-gap: 1rem; }
+        @media (min-width: 768px) { .masonry { columns: 3; } }
+        .masonry > * { break-inside: avoid; margin-bottom: 1rem; }
+
+        /* Nav blur */
+        #main-nav { backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); background: rgba(255,255,255,0.75); }
+        .nav-scrolled { backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); background: rgba(255,255,255,0.85); }
+
+        /* Prose styles for articles */
+        .prose img { border-radius: 0.75rem; }
+        .prose figure { margin: 2rem 0; }
+        .prose figcaption { text-align: center; color: #6b7280; margin-top: 0.5rem; font-size: 0.875rem; }
+    </style>
+
     {% block head %}{% endblock %}
 </head>
-<body class="h-full bg-gray-50" hx-boost="true">
+<body class="h-full bg-white font-sans text-gray-900 antialiased" hx-boost="true">
     <!-- Navigation -->
-    <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
-        <div class="max-w-4xl mx-auto px-4">
-            <div class="flex justify-between h-16 items-center">
-                <a href="/" class="text-xl font-bold text-gray-900">Мир Якоба</a>
+    <nav id="main-nav" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex justify-between h-20 items-center">
+                <!-- Logo -->
+                <a href="/" class="font-serif text-2xl font-bold tracking-tight hover:opacity-70 transition">
+                    Мир Якоба
+                </a>
 
-                <!-- Desktop nav (hidden on mobile) -->
-                <div class="hidden md:flex items-center space-x-4">
-                    <a href="/" class="text-gray-600 hover:text-gray-900">Главная</a>
-                    <a href="/search" class="text-gray-600 hover:text-gray-900">Поиск</a>
+                <!-- Desktop nav -->
+                <div class="hidden md:flex items-center gap-8">
+                    <a href="/" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Главная</a>
+                    <a href="/gallery" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Галерея</a>
+                    <a href="/search" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Поиск</a>
                     {% if user %}
                         {% if user.is_admin %}
-                        <a href="/admin" class="text-gray-600 hover:text-gray-900">Админ</a>
+                        <a href="/admin" class="text-sm font-medium text-gray-600 hover:text-gray-900 transition">Админ</a>
                         {% endif %}
-                        <a href="/profile" class="text-gray-500 hover:text-gray-700">{{ user.display_name }}</a>
+                        <a href="/profile" class="text-sm font-medium text-gray-500 hover:text-gray-900 transition">{{ user.display_name }}</a>
                         <form action="/api/v1/auth/logout" method="POST" class="inline" hx-boost="false">
-                            <button type="submit" class="text-gray-600 hover:text-gray-900">Выйти</button>
+                            <button type="submit" class="text-sm text-gray-400 hover:text-gray-600 transition">Выйти</button>
                         </form>
                     {% else %}
-                        <a href="/login" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Войти</a>
+                        <a href="/login" class="text-sm font-medium bg-gray-900 text-white px-5 py-2.5 rounded-full hover:bg-gray-700 transition">Войти</a>
                     {% endif %}
                 </div>
 
-                <!-- Mobile hamburger button -->
-                <button class="md:hidden p-2 rounded-lg hover:bg-gray-100" onclick="toggleMobileMenu()">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                <!-- Mobile menu button -->
+                <button class="md:hidden p-2 rounded-lg hover:bg-gray-100 transition" onclick="toggleMobileMenu()" aria-label="Menu">
+                    <svg id="menu-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6h16M4 12h16M4 18h16"/>
                     </svg>
                 </button>
             </div>
 
-            <!-- Mobile menu (hidden by default) -->
-            <div id="mobile-menu" class="hidden md:hidden pb-4 border-t mt-2 pt-4">
-                <div class="flex flex-col space-y-3">
-                    <a href="/" class="text-gray-600 hover:text-gray-900 py-2">Главная</a>
-                    <a href="/search" class="text-gray-600 hover:text-gray-900 py-2">Поиск</a>
+            <!-- Mobile menu -->
+            <div id="mobile-menu" class="hidden md:hidden pb-6">
+                <div class="flex flex-col gap-1 pt-2 border-t border-gray-100">
+                    <a href="/" class="py-3 text-gray-600 hover:text-gray-900 font-medium">Главная</a>
+                    <a href="/gallery" class="py-3 text-gray-600 hover:text-gray-900 font-medium">Галерея</a>
+                    <a href="/search" class="py-3 text-gray-600 hover:text-gray-900 font-medium">Поиск</a>
                     {% if user %}
                         {% if user.is_admin %}
-                        <a href="/admin" class="text-gray-600 hover:text-gray-900 py-2">Админ</a>
+                        <a href="/admin" class="py-3 text-gray-600 hover:text-gray-900 font-medium">Админ</a>
                         {% endif %}
-                        <a href="/profile" class="text-gray-500 hover:text-gray-700 py-2">{{ user.display_name }}</a>
+                        <a href="/profile" class="py-3 text-gray-500 hover:text-gray-900 font-medium">{{ user.display_name }}</a>
                         <form action="/api/v1/auth/logout" method="POST" hx-boost="false">
-                            <button type="submit" class="text-gray-600 hover:text-gray-900 py-2 w-full text-left">Выйти</button>
+                            <button type="submit" class="py-3 text-gray-400 hover:text-gray-600 w-full text-left font-medium">Выйти</button>
                         </form>
                     {% else %}
-                        <a href="/login" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 text-center">Войти</a>
+                        <a href="/login" class="mt-2 bg-gray-900 text-white px-5 py-3 rounded-full hover:bg-gray-700 text-center font-medium">Войти</a>
                     {% endif %}
                 </div>
             </div>
@@ -72,17 +128,40 @@
     function toggleMobileMenu() {
         document.getElementById('mobile-menu').classList.toggle('hidden');
     }
+
+    // Nav scroll effect
+    const nav = document.getElementById('main-nav');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 20) {
+            nav.classList.add('nav-scrolled', 'shadow-sm');
+        } else {
+            nav.classList.remove('nav-scrolled', 'shadow-sm');
+        }
+    });
     </script>
 
-    <!-- Main content -->
-    <main class="max-w-4xl mx-auto px-4 py-8">
+    <!-- Main content (with top padding for fixed nav) -->
+    <main class="pt-20">
         {% block content %}{% endblock %}
     </main>
 
     <!-- Footer -->
-    <footer class="border-t mt-auto py-6">
-        <div class="max-w-4xl mx-auto px-4 text-center text-gray-500 text-sm">
-            &copy; 2025 Мир Якоба
+    <footer class="border-t border-gray-100 mt-24">
+        <div class="max-w-6xl mx-auto px-6 py-12">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                <div>
+                    <a href="/" class="font-serif text-xl font-bold">Мир Якоба</a>
+                    <p class="text-sm text-gray-400 mt-1">Творчество, мысли и код</p>
+                </div>
+                <div class="flex items-center gap-8 text-sm text-gray-400">
+                    <a href="/" class="hover:text-gray-600 transition">Главная</a>
+                    <a href="/gallery" class="hover:text-gray-600 transition">Галерея</a>
+                    <a href="/search" class="hover:text-gray-600 transition">Поиск</a>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-100 text-center text-sm text-gray-300">
+                &copy; 2025 Мир Якоба
+            </div>
         </div>
     </footer>
 

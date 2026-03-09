@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.db.session import get_db
 from src.db.models.user import AccessLevel
-from src.db.models.post import PostStatus, PostVisibility
+from src.db.models.post import PostStatus, PostType, PostVisibility
 from src.services.auth import AuthService
 from src.services.notification import notify_post_published
 from src.services.post import PostService
@@ -57,6 +57,57 @@ async def home(
     return templates.TemplateResponse(
         "pages/home.html",
         {"request": request, "title": "Home", "user": user, "hero": hero},
+    )
+
+
+@web_router.get("/gallery", response_class=HTMLResponse)
+async def gallery_page(
+    request: Request,
+    user=Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db),
+):
+    """Gallery page showing artwork posts."""
+    if user and user.is_admin:
+        access_level = AccessLevel.PREMIUM_2
+    else:
+        access_level = user.access_level if user else AccessLevel.PUBLIC
+    post_service = PostService(db)
+    posts, total = await post_service.list_posts(
+        user_access_level=access_level,
+        page=1,
+        per_page=50,
+        post_type=PostType.ARTWORK,
+    )
+    return templates.TemplateResponse(
+        "pages/gallery.html",
+        {"request": request, "title": "Галерея", "user": user, "posts": posts, "total": total},
+    )
+
+
+@web_router.get("/partials/gallery", response_class=HTMLResponse)
+async def gallery_partial(
+    request: Request,
+    page: int = 1,
+    user=Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db),
+):
+    """Gallery items partial for htmx."""
+    if user and user.is_admin:
+        access_level = AccessLevel.PREMIUM_2
+    else:
+        access_level = user.access_level if user else AccessLevel.PUBLIC
+    post_service = PostService(db)
+    posts, total = await post_service.list_posts(
+        user_access_level=access_level,
+        page=page,
+        per_page=12,
+        post_type=PostType.ARTWORK,
+    )
+    has_more = (page * 12) < total
+    next_page = page + 1 if has_more else None
+    return templates.TemplateResponse(
+        "partials/gallery_grid.html",
+        {"request": request, "posts": posts, "has_more": has_more, "next_page": next_page, "page": page},
     )
 
 
@@ -124,6 +175,7 @@ async def posts_partial(
         user_access_level=access_level,
         page=page,
         per_page=10,
+        post_type=PostType.ARTICLE,
     )
 
     has_more = (page * 10) < total
@@ -212,6 +264,7 @@ async def admin_create_post(
     status: str = Form("draft"),
     media_ids: str = Form(""),
     content_blocks: str = Form(""),
+    post_type: str = Form("article"),
     user=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -238,6 +291,7 @@ async def admin_create_post(
         visibility=PostVisibility(visibility),
         status=PostStatus(status),
         content_blocks=blocks_data,
+        post_type=PostType(post_type),
     )
 
     # Attach uploaded media to the post
@@ -293,6 +347,7 @@ async def admin_update_post(
     media_ids: str = Form(""),
     content_blocks: str = Form(""),
     cover_image_id: str = Form(""),
+    post_type: str = Form("article"),
     user=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
@@ -332,6 +387,7 @@ async def admin_update_post(
         status=PostStatus(status),
         content_blocks=blocks_data,
         cover_image_id=cover_uuid,
+        post_type=PostType(post_type),
     )
 
     if not post:

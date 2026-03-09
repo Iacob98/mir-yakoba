@@ -1,5 +1,5 @@
 from src.db.models.user import User, AuthCode, Session, AccessLevel
-from src.db.models.post import Post, PostStatus, PostVisibility
+from src.db.models.post import Post, PostStatus, PostType, PostVisibility
 from src.db.models.media import Media, MediaType
 from src.db.models.comment import Comment
 from src.db.models.settings import SiteSettings
@@ -11,6 +11,7 @@ __all__ = [
     "AccessLevel",
     "Post",
     "PostStatus",
+    "PostType",
     "PostVisibility",
     "Media",
     "MediaType",
