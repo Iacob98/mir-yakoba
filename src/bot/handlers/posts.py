@@ -882,11 +882,8 @@ async def process_publish_choice(callback: CallbackQuery, state: FSMContext):
             from datetime import datetime
             title = f"Фото {datetime.now().strftime('%d.%m.%Y %H:%M')}"
 
-        # Set PostType for the DB
-        if post_type == "photo":
-            db_post_type = PostType.ARTWORK
-        else:
-            db_post_type = PostType.ARTICLE
+        # Photo posts from bot are regular articles (artwork is for works uploaded via admin)
+        db_post_type = PostType.ARTICLE
 
         post_service = PostService(db)
         post = await post_service.create_post(
