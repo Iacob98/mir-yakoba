@@ -9,6 +9,7 @@ from uuid import UUID
 import aiofiles
 from fastapi import UploadFile
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.config import settings
@@ -302,6 +303,47 @@ class MediaService:
         await self.db.commit()
         await self.db.refresh(media)
         return media
+
+    async def list_all_images(
+        self,
+        user_access_level=None,
+        limit: int = 60,
+        offset: int = 0,
+    ) -> list[Media]:
+        """Get all images from published posts, respecting access level."""
+        from src.db.models.post import Post, PostStatus, PostVisibility
+        from src.db.models.user import AccessLevel
+
+        if user_access_level is None:
+            user_access_level = AccessLevel.PUBLIC
+
+        visibility_map = {
+            AccessLevel.PUBLIC: [PostVisibility.PUBLIC],
+            AccessLevel.REGISTERED: [PostVisibility.PUBLIC, PostVisibility.REGISTERED],
+            AccessLevel.PREMIUM_1: [
+                PostVisibility.PUBLIC, PostVisibility.REGISTERED, PostVisibility.PREMIUM_1,
+            ],
+            AccessLevel.PREMIUM_2: [
+                PostVisibility.PUBLIC, PostVisibility.REGISTERED,
+                PostVisibility.PREMIUM_1, PostVisibility.PREMIUM_2,
+            ],
+        }
+        allowed = visibility_map.get(user_access_level, [PostVisibility.PUBLIC])
+
+        result = await self.db.execute(
+            select(Media)
+            .join(Post, Media.post_id == Post.id)
+            .options(selectinload(Media.post))
+            .where(
+                Media.media_type == MediaType.IMAGE,
+                Post.status == PostStatus.PUBLISHED,
+                Post.visibility.in_(allowed),
+            )
+            .order_by(Media.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return list(result.scalars().all())
 
     def _get_max_size(self, media_type: MediaType) -> int:
         """Get max file size for media type."""

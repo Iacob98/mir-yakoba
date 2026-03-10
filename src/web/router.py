@@ -66,7 +66,32 @@ async def gallery_page(
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
-    """Gallery page showing artwork posts."""
+    """Gallery page showing all images from all published posts."""
+    from src.services.media import MediaService
+
+    if user and user.is_admin:
+        access_level = AccessLevel.PREMIUM_2
+    else:
+        access_level = user.access_level if user else AccessLevel.PUBLIC
+
+    media_service = MediaService(db)
+    images = await media_service.list_all_images(
+        user_access_level=access_level,
+        limit=60,
+    )
+    return templates.TemplateResponse(
+        "pages/gallery.html",
+        {"request": request, "title": "Галерея", "user": user, "images": images},
+    )
+
+
+@web_router.get("/works", response_class=HTMLResponse)
+async def works_page(
+    request: Request,
+    user=Depends(get_current_user_optional),
+    db: AsyncSession = Depends(get_db),
+):
+    """Works page showing artwork-type posts."""
     if user and user.is_admin:
         access_level = AccessLevel.PREMIUM_2
     else:
@@ -79,35 +104,8 @@ async def gallery_page(
         post_type=PostType.ARTWORK,
     )
     return templates.TemplateResponse(
-        "pages/gallery.html",
-        {"request": request, "title": "Галерея", "user": user, "posts": posts, "total": total},
-    )
-
-
-@web_router.get("/partials/gallery", response_class=HTMLResponse)
-async def gallery_partial(
-    request: Request,
-    page: int = 1,
-    user=Depends(get_current_user_optional),
-    db: AsyncSession = Depends(get_db),
-):
-    """Gallery items partial for htmx."""
-    if user and user.is_admin:
-        access_level = AccessLevel.PREMIUM_2
-    else:
-        access_level = user.access_level if user else AccessLevel.PUBLIC
-    post_service = PostService(db)
-    posts, total = await post_service.list_posts(
-        user_access_level=access_level,
-        page=page,
-        per_page=12,
-        post_type=PostType.ARTWORK,
-    )
-    has_more = (page * 12) < total
-    next_page = page + 1 if has_more else None
-    return templates.TemplateResponse(
-        "partials/gallery_grid.html",
-        {"request": request, "posts": posts, "has_more": has_more, "next_page": next_page, "page": page},
+        "pages/works.html",
+        {"request": request, "title": "Мои работы", "user": user, "posts": posts, "total": total},
     )
 
 

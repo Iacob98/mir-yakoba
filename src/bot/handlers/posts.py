@@ -15,10 +15,10 @@ router = Router()
 
 
 class PostCreation(StatesGroup):
-    waiting_for_type = State()          # NEW: выбор типа поста (текст/аудио)
+    waiting_for_type = State()          # выбор типа поста (текст/аудио/фото)
     waiting_for_title = State()
     waiting_for_content = State()       # Текст или голосовое/кружочек
-    confirm_save_audio = State()        # NEW: подтверждение сохранения аудио
+    confirm_save_audio = State()        # подтверждение сохранения аудио
     waiting_for_visibility = State()
     waiting_for_media = State()
     waiting_for_publish_choice = State()  # Черновик или опубликовать
@@ -40,6 +40,7 @@ async def cmd_newpost(message: Message, state: FSMContext):
     # Show post type selection
     builder = InlineKeyboardBuilder()
     builder.button(text="📝 Текстовый пост", callback_data="post_type_text")
+    builder.button(text="📷 Фото/Видео пост", callback_data="post_type_photo")
     builder.button(text="🎤 Аудио/Видео пост", callback_data="post_type_voice")
     builder.adjust(1)
 
@@ -56,24 +57,49 @@ async def process_post_type(callback: CallbackQuery, state: FSMContext):
     """Process post type selection."""
     from aiogram.exceptions import TelegramBadRequest
 
-    post_type = "voice" if "voice" in callback.data else "text"
+    if "voice" in callback.data:
+        post_type = "voice"
+    elif "photo" in callback.data:
+        post_type = "photo"
+    else:
+        post_type = "text"
+
     logger.info(f"User {callback.from_user.id} selected post type: {post_type}")
     await state.update_data(post_type=post_type)
-    await state.set_state(PostCreation.waiting_for_title)
 
-    type_label = "🎤 Аудио/Видео" if post_type == "voice" else "📝 Текстовый"
+    type_labels = {
+        "text": "📝 Текстовый",
+        "photo": "📷 Фото/Видео",
+        "voice": "🎤 Аудио/Видео",
+    }
+    type_label = type_labels.get(post_type, post_type)
 
-    try:
-        await callback.message.edit_text(
+    if post_type == "photo":
+        # Photo posts go straight to media upload, title is optional
+        await state.set_state(PostCreation.waiting_for_media)
+        await state.update_data(content="", media_ids=[])
+
+        builder = InlineKeyboardBuilder()
+        builder.button(text="✅ Готово - Создать пост", callback_data="media_done")
+        builder.adjust(1)
+
+        msg_text = (
             f"✅ Тип: <b>{type_label}</b>\n\n"
-            "Отправьте <b>заголовок</b> поста:"
+            "Отправляйте <b>фото и видео</b> по одному.\n"
+            "Когда закончите — нажмите <b>Готово</b>.\n\n"
+            "Можете также отправить текст — он станет заголовком поста."
         )
-    except TelegramBadRequest:
-        # Message already edited or same content
-        await callback.message.answer(
-            f"✅ Тип: <b>{type_label}</b>\n\n"
-            "Отправьте <b>заголовок</b> поста:"
-        )
+        try:
+            await callback.message.edit_text(msg_text, reply_markup=builder.as_markup())
+        except TelegramBadRequest:
+            await callback.message.answer(msg_text, reply_markup=builder.as_markup())
+    else:
+        await state.set_state(PostCreation.waiting_for_title)
+        msg_text = f"✅ Тип: <b>{type_label}</b>\n\nОтправьте <b>заголовок</b> поста:"
+        try:
+            await callback.message.edit_text(msg_text)
+        except TelegramBadRequest:
+            await callback.message.answer(msg_text)
 
     try:
         await callback.answer()
@@ -555,10 +581,40 @@ async def _show_visibility_keyboard(message: Message, state: FSMContext, edit: b
 
 @router.callback_query(F.data.startswith("vis_"), PostCreation.waiting_for_visibility)
 async def process_visibility(callback: CallbackQuery, state: FSMContext):
-    """Process visibility selection and ask about media."""
+    """Process visibility selection and ask about media or publishing."""
     from aiogram.exceptions import TelegramBadRequest
 
     visibility = callback.data.replace("vis_", "")
+    data = await state.get_data()
+    post_type = data.get("post_type")
+
+    # For photo posts, media was already collected — go to publish
+    if post_type == "photo":
+        await state.update_data(visibility=visibility)
+        await state.set_state(PostCreation.waiting_for_publish_choice)
+
+        builder = InlineKeyboardBuilder()
+        builder.button(text="🚀 Опубликовать сейчас", callback_data="publish_now")
+        builder.button(text="📝 Сохранить как черновик", callback_data="publish_draft")
+        builder.adjust(1)
+
+        try:
+            await callback.message.edit_text(
+                "📄 <b>Последний шаг</b>\n\nВыберите действие:",
+                reply_markup=builder.as_markup(),
+            )
+        except TelegramBadRequest:
+            await callback.message.answer(
+                "📄 <b>Последний шаг</b>\n\nВыберите действие:",
+                reply_markup=builder.as_markup(),
+            )
+
+        try:
+            await callback.answer()
+        except TelegramBadRequest:
+            pass
+        return
+
     await state.update_data(visibility=visibility, media_ids=[])
     await state.set_state(PostCreation.waiting_for_media)
 
@@ -596,6 +652,23 @@ async def process_visibility(callback: CallbackQuery, state: FSMContext):
         await callback.answer()
     except TelegramBadRequest:
         pass  # Query timeout - ignore
+
+
+@router.message(PostCreation.waiting_for_media, F.text)
+async def process_media_text(message: Message, state: FSMContext):
+    """Handle text during media upload — use as title for photo posts."""
+    data = await state.get_data()
+    post_type = data.get("post_type")
+
+    if post_type == "photo":
+        title = message.text.strip()
+        await state.update_data(title=title)
+        await message.answer(
+            f"✅ Заголовок: <b>{title}</b>\n\n"
+            "Продолжайте отправлять фото/видео или нажмите <b>Готово</b>."
+        )
+    else:
+        await message.answer("⚠️ Отправьте медиафайл или нажмите <b>Готово</b>.")
 
 
 @router.message(PostCreation.waiting_for_media, F.photo)
@@ -725,9 +798,32 @@ async def _save_telegram_media(
 @router.callback_query(F.data == "media_done", PostCreation.waiting_for_media)
 @router.callback_query(F.data == "media_skip", PostCreation.waiting_for_media)
 async def process_media_done(callback: CallbackQuery, state: FSMContext):
-    """Finish media upload and ask about publishing."""
+    """Finish media upload and ask about visibility or publishing."""
     from aiogram.exceptions import TelegramBadRequest
 
+    data = await state.get_data()
+    post_type = data.get("post_type")
+
+    # For photo posts, check that at least one media was uploaded
+    if post_type == "photo":
+        media_ids = data.get("media_ids", [])
+        if not media_ids and callback.data == "media_done":
+            try:
+                await callback.answer("Отправьте хотя бы одно фото или видео", show_alert=True)
+            except Exception:
+                pass
+            return
+
+    # For photo posts, go to visibility selection first (they skipped it earlier)
+    if post_type == "photo":
+        await _show_visibility_keyboard(callback.message, state, edit=False)
+        try:
+            await callback.answer()
+        except TelegramBadRequest:
+            pass
+        return
+
+    # For other post types, go straight to publish choice
     await state.set_state(PostCreation.waiting_for_publish_choice)
 
     builder = InlineKeyboardBuilder()
@@ -774,14 +870,31 @@ async def process_publish_choice(callback: CallbackQuery, state: FSMContext):
             await callback.message.edit_text("❌ Пользователь не найден.")
             return
 
-        from src.db.models.post import PostVisibility, PostStatus
+        from src.db.models.post import PostVisibility, PostStatus, PostType
+
+        # Determine title — for photo posts it's optional
+        post_type = data.get("post_type", "text")
+        title = data.get("title", "").strip()
+        content = data.get("content", "").strip()
+
+        if not title:
+            # Auto-generate title from date
+            from datetime import datetime
+            title = f"Фото {datetime.now().strftime('%d.%m.%Y %H:%M')}"
+
+        # Set PostType for the DB
+        if post_type == "photo":
+            db_post_type = PostType.ARTWORK
+        else:
+            db_post_type = PostType.ARTICLE
 
         post_service = PostService(db)
         post = await post_service.create_post(
             author_id=user.id,
-            title=data["title"],
-            content_md=data["content"],
-            visibility=PostVisibility(data["visibility"]),
+            title=title,
+            content_md=content or "",
+            visibility=PostVisibility(data.get("visibility", "public")),
+            post_type=db_post_type,
         )
 
         # Publish if requested
@@ -804,11 +917,21 @@ async def process_publish_choice(callback: CallbackQuery, state: FSMContext):
 
         # Attach additional media to post
         media_ids = data.get("media_ids", [])
+        first_image_id = None
         if media_ids:
             start_idx = 1 if data.get("save_original_audio") and data.get("voice_media_id") else 0
             for idx, mid in enumerate(media_ids):
                 await media_service.attach_to_post(UUID(mid), post.id, user.id)
                 await media_service.update_sort_order(UUID(mid), start_idx + idx)
+                # Track first image for cover
+                if first_image_id is None:
+                    media_item = await media_service.get_by_id(UUID(mid))
+                    if media_item and media_item.media_type.value == "image":
+                        first_image_id = UUID(mid)
+
+        # Set first image as cover for photo posts
+        if post_type == "photo" and first_image_id:
+            await post_service.update_post(post.id, cover_image_id=first_image_id)
 
         from src.config import settings
         post_url = f"{settings.base_url}/posts/{post.slug}"
@@ -827,7 +950,7 @@ async def process_publish_choice(callback: CallbackQuery, state: FSMContext):
             await callback.message.edit_text(
                 f"✅ <b>Пост создан!</b>\n\n"
                 f"📝 {post.title}\n"
-                f"👁 Видимость: {data['visibility']}\n"
+                f"👁 Видимость: {data.get('visibility', 'public')}\n"
                 f"📄 Статус: {status_text}{media_text}\n\n"
                 f"<a href='{post_url}'>Открыть пост</a>"
             )
@@ -835,7 +958,7 @@ async def process_publish_choice(callback: CallbackQuery, state: FSMContext):
             await callback.message.answer(
                 f"✅ <b>Пост создан!</b>\n\n"
                 f"📝 {post.title}\n"
-                f"👁 Видимость: {data['visibility']}\n"
+                f"👁 Видимость: {data.get('visibility', 'public')}\n"
                 f"📄 Статус: {status_text}{media_text}\n\n"
                 f"<a href='{post_url}'>Открыть пост</a>"
             )
