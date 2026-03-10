@@ -10,8 +10,23 @@
                      class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
             </div>
             {% else %}
-            <div class="aspect-[16/10] rounded-2xl mb-4 bg-gradient-to-br from-gray-100 to-gray-50 flex items-center justify-center">
-                <span class="text-4xl text-gray-300 font-serif">{{ post.title[0] }}</span>
+            {% set emojis = ['🎨','🖋','💡','🌀','📝','🔮','🎭','🌿','☕','🧩','📚','🎵','🪐','🌊','🔥','✨','🍂','🌙','🎲','🫧'] %}
+            {% set bg_colors = [
+                'from-violet-100 to-pink-50',
+                'from-sky-100 to-cyan-50',
+                'from-amber-100 to-yellow-50',
+                'from-emerald-100 to-green-50',
+                'from-rose-100 to-red-50',
+                'from-indigo-100 to-blue-50',
+                'from-teal-100 to-emerald-50',
+                'from-orange-100 to-amber-50',
+                'from-fuchsia-100 to-purple-50',
+                'from-lime-100 to-green-50'
+            ] %}
+            {% set idx = range(emojis|length) | random %}
+            {% set bg_idx = range(bg_colors|length) | random %}
+            <div class="aspect-[16/10] rounded-2xl mb-4 bg-gradient-to-br {{ bg_colors[bg_idx] }} flex items-center justify-center">
+                <span class="text-6xl">{{ emojis[idx] }}</span>
             </div>
             {% endif %}
 
