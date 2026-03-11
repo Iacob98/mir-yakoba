@@ -29,6 +29,9 @@ ALLOWED_MIME_TYPES = {
         "video/mp4", "video/webm", "video/ogg", "video/quicktime",
         "video/x-msvideo", "video/x-matroska"
     },
+    MediaType.DOCUMENT: {
+        "application/pdf",
+    },
 }
 
 # File extensions per media type
@@ -36,6 +39,7 @@ ALLOWED_EXTENSIONS = {
     MediaType.IMAGE: {".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"},
     MediaType.AUDIO: {".mp3", ".wav", ".ogg", ".aac", ".flac", ".m4a"},
     MediaType.VIDEO: {".mp4", ".webm", ".ogv", ".mov", ".avi", ".mkv"},
+    MediaType.DOCUMENT: {".pdf"},
 }
 
 
@@ -123,7 +127,7 @@ class MediaService:
         unique_filename = f"{uuid.uuid4()}{ext}"
 
         # Determine storage path
-        type_dir = media_type.value + "s"  # images, audios, videos
+        type_dir = media_type.value + "s"  # images, audios, videos, documents
         storage_dir = settings.upload_dir / type_dir
         storage_dir.mkdir(parents=True, exist_ok=True)
 
@@ -353,6 +357,8 @@ class MediaService:
             return settings.max_audio_size
         elif media_type == MediaType.VIDEO:
             return settings.max_video_size
+        elif media_type == MediaType.DOCUMENT:
+            return settings.max_document_size
         return settings.max_image_size
 
     def _get_default_ext(self, media_type: MediaType) -> str:
@@ -361,6 +367,7 @@ class MediaService:
             MediaType.IMAGE: ".jpg",
             MediaType.AUDIO: ".mp3",
             MediaType.VIDEO: ".mp4",
+            MediaType.DOCUMENT: ".pdf",
         }
         return defaults.get(media_type, ".bin")
 

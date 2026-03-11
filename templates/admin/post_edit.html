@@ -83,7 +83,7 @@
                 <div class="mb-4">
                     <input type="file"
                            id="media-file"
-                           accept="image/*,audio/*,video/*"
+                           accept="image/*,audio/*,video/*,.pdf"
                            class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                     <button type="button"
                             id="upload-btn"
@@ -118,8 +118,11 @@
                     <option value="article" {% if not post or post.post_type.value == 'article' %}selected{% endif %}>
                         Статья
                     </option>
-                    <option value="artwork" {% if post and post.post_type.value == 'artwork' %}selected{% endif %}>
-                        Работа (галерея)
+                    <option value="photo" {% if post and post.post_type.value == 'photo' %}selected{% endif %}>
+                        Фото
+                    </option>
+                    <option value="work" {% if post and post.post_type.value == 'work' %}selected{% endif %}>
+                        Работа (портфолио)
                     </option>
                 </select>
             </div>

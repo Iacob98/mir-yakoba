@@ -1,6 +1,6 @@
 from aiogram import Router, F
 from aiogram.filters import Command, CommandStart
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup, KeyboardButton
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 
@@ -13,6 +13,16 @@ class NicknameChange(StatesGroup):
     waiting_for_nickname = State()
 
 router = Router()
+
+
+def get_reply_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
+    """Persistent reply keyboard at the bottom of the screen."""
+    buttons = [
+        [KeyboardButton(text="📋 Меню"), KeyboardButton(text="🔐 Войти на сайт")],
+    ]
+    if is_admin:
+        buttons.append([KeyboardButton(text="📝 Новый пост")])
+    return ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)
 
 
 def get_main_menu_keyboard(is_admin: bool = False) -> InlineKeyboardMarkup:
@@ -43,9 +53,14 @@ async def cmd_start(message: Message):
                 username=user.username,
                 display_name=user.full_name,
             )
+            is_admin = existing_user.is_admin
             await message.answer(
                 f"👋 С возвращением, <b>{user.full_name}</b>!",
-                reply_markup=get_main_menu_keyboard(existing_user.is_admin),
+                reply_markup=get_reply_keyboard(is_admin),
+            )
+            await message.answer(
+                "📋 <b>Главное меню</b>",
+                reply_markup=get_main_menu_keyboard(is_admin),
             )
         else:
             # Create new user
@@ -54,10 +69,15 @@ async def cmd_start(message: Message):
                 username=user.username,
                 display_name=user.full_name,
             )
+            is_admin = new_user.is_admin if new_user else False
             await message.answer(
                 f"🎉 Добро пожаловать, <b>{user.full_name}</b>!\n\n"
                 f"Ваш аккаунт создан.",
-                reply_markup=get_main_menu_keyboard(new_user.is_admin if new_user else False),
+                reply_markup=get_reply_keyboard(is_admin),
+            )
+            await message.answer(
+                "📋 <b>Главное меню</b>",
+                reply_markup=get_main_menu_keyboard(is_admin),
             )
 
 
@@ -102,6 +122,80 @@ async def cmd_help(message: Message):
         "/newpost - Создать новый пост (для админов)\n"
         "/cancel - Отменить текущее действие\n"
         "/help - Показать эту справку"
+    )
+
+
+# ============= REPLY KEYBOARD HANDLERS =============
+
+@router.message(F.text == "📋 Меню")
+async def reply_menu(message: Message):
+    """Handle reply keyboard 'Menu' button."""
+    user = message.from_user
+
+    async with get_db_context() as db:
+        auth_service = AuthService(db)
+        existing_user = await auth_service.get_user_by_telegram_id(user.id)
+        is_admin = existing_user.is_admin if existing_user else False
+
+    await message.answer(
+        "📋 <b>Главное меню</b>",
+        reply_markup=get_main_menu_keyboard(is_admin),
+    )
+
+
+@router.message(F.text == "🔐 Войти на сайт")
+async def reply_login(message: Message):
+    """Handle reply keyboard 'Login' button."""
+    user = message.from_user
+
+    async with get_db_context() as db:
+        auth_service = AuthService(db)
+        existing_user = await auth_service.get_user_by_telegram_id(user.id)
+
+        if not existing_user:
+            existing_user = await auth_service.create_user(
+                telegram_id=user.id,
+                username=user.username,
+                display_name=user.full_name,
+            )
+
+        code = await auth_service.create_auth_code(user.id)
+
+        await message.answer(
+            f"🔐 <b>Ваш код для входа:</b>\n\n"
+            f"<code>{code}</code>\n\n"
+            f"Введите этот код на сайте для входа.\n"
+            f"Код действителен 5 минут."
+        )
+
+
+@router.message(F.text == "📝 Новый пост")
+async def reply_newpost(message: Message, state: FSMContext):
+    """Handle reply keyboard 'New post' button."""
+    from src.bot.handlers.posts import PostCreation
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+    user = message.from_user
+
+    async with get_db_context() as db:
+        auth_service = AuthService(db)
+        db_user = await auth_service.get_user_by_telegram_id(user.id)
+
+        if not db_user or not db_user.is_admin:
+            await message.answer("❌ Только администраторы могут создавать посты.")
+            return
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text="📝 Текстовый пост", callback_data="post_type_text")
+    builder.button(text="📷 Фото/Видео пост", callback_data="post_type_photo")
+    builder.button(text="🎤 Аудио/Видео пост", callback_data="post_type_voice")
+    builder.adjust(1)
+
+    await state.set_state(PostCreation.waiting_for_type)
+    await message.answer(
+        "📝 <b>Создание нового поста</b>\n\n"
+        "Выберите тип поста:",
+        reply_markup=builder.as_markup()
     )
 
 

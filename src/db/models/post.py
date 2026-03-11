@@ -27,7 +27,8 @@ if TYPE_CHECKING:
 
 class PostType(str, enum.Enum):
     ARTICLE = "article"
-    ARTWORK = "artwork"
+    PHOTO = "photo"
+    WORK = "work"
 
 
 class PostStatus(str, enum.Enum):

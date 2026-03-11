@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     max_image_size: int = 2 * 1024 * 1024 * 1024  # 2GB (no practical limit)
     max_audio_size: int = 2 * 1024 * 1024 * 1024  # 2GB (no practical limit)
     max_video_size: int = 2 * 1024 * 1024 * 1024  # 2GB (no practical limit)
+    max_document_size: int = 2 * 1024 * 1024 * 1024  # 2GB (no practical limit)
 
     # Session
     session_expire_days: int = 30

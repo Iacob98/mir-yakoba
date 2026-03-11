@@ -99,6 +99,14 @@
                     <source src="/uploads/{{ media.file_path }}" type="{{ media.mime_type }}">
                 </video>
             </figure>
+            {% elif media.media_type.value == 'document' %}
+            <div class="bg-gray-50 rounded-2xl overflow-hidden">
+                <iframe src="/uploads/{{ media.file_path }}" class="w-full h-[600px]" loading="lazy"></iframe>
+                <div class="px-6 py-3 flex items-center justify-between border-t">
+                    <span class="text-sm text-gray-500">{{ media.original_name }}</span>
+                    <a href="/uploads/{{ media.file_path }}" download class="text-sm text-blue-600 hover:text-blue-800 font-medium">Скачать PDF</a>
+                </div>
+            </div>
             {% endif %}
         {% endfor %}
     </div>

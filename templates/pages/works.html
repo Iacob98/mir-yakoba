@@ -7,7 +7,7 @@
     <div class="text-center mb-16">
         <p class="text-sm font-medium text-gray-400 uppercase tracking-widest mb-3">Портфолио</p>
         <h1 class="font-serif text-4xl sm:text-5xl font-bold mb-4">Мои работы</h1>
-        <p class="text-gray-500 max-w-md mx-auto">Картины, рисунки и другие творческие работы</p>
+        <p class="text-gray-500 max-w-md mx-auto">Фото, видео и документы из моего портфолио</p>
     </div>
 
     {% if posts %}
@@ -21,7 +21,16 @@
                      class="w-full object-cover group-hover:scale-105 transition duration-500"
                      loading="lazy">
                 {% else %}
+                {# Check for video or document media #}
+                {% set has_video = post.media | selectattr('media_type.value', 'equalto', 'video') | list %}
+                {% set has_doc = post.media | selectattr('media_type.value', 'equalto', 'document') | list %}
+                {% if has_video %}
+                {% set emojis = ['🎬','📹','🎥','🎞','📽'] %}
+                {% elif has_doc %}
+                {% set emojis = ['📄','📑','📋','📃','📝'] %}
+                {% else %}
                 {% set emojis = ['🎨','🖼','🖌','✏️','🎭','🌈','💎','🪷','🦋','✨'] %}
+                {% endif %}
                 {% set bg_colors = ['from-violet-100 to-pink-50','from-sky-100 to-cyan-50','from-amber-100 to-yellow-50','from-emerald-100 to-green-50','from-rose-100 to-red-50'] %}
                 {% set idx = range(emojis|length) | random %}
                 {% set bg_idx = range(bg_colors|length) | random %}
@@ -36,6 +45,16 @@
                         {% if post.excerpt %}
                         <p class="text-white/70 text-sm mt-1 line-clamp-2">{{ post.excerpt }}</p>
                         {% endif %}
+                        {# Show media type badges #}
+                        <div class="flex gap-1 mt-2">
+                            {% for m in post.media %}
+                            {% if m.media_type.value == 'video' %}
+                            <span class="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">Video</span>
+                            {% elif m.media_type.value == 'document' %}
+                            <span class="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">PDF</span>
+                            {% endif %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>

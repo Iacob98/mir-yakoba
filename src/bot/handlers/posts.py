@@ -701,8 +701,10 @@ async def process_media_document(message: Message, state: FSMContext, bot: Bot):
         await _save_telegram_media(message, state, bot, "audio", is_document=True)
     elif mime.startswith("video/"):
         await _save_telegram_media(message, state, bot, "video", is_document=True)
+    elif mime == "application/pdf":
+        await _save_telegram_media(message, state, bot, "document", is_document=True)
     else:
-        await message.answer("⚠️ Неподдерживаемый тип файла. Отправьте изображение, аудио или видео.")
+        await message.answer("⚠️ Неподдерживаемый тип файла. Отправьте изображение, аудио, видео или PDF.")
 
 
 async def _save_telegram_media(
@@ -779,6 +781,7 @@ async def _save_telegram_media(
                 "image": "Фото",
                 "audio": "Аудио",
                 "video": "Видео",
+                "document": "Документ",
             }
             type_label = media_type_labels.get(media_type, "Файл")
 
@@ -882,8 +885,8 @@ async def process_publish_choice(callback: CallbackQuery, state: FSMContext):
             from datetime import datetime
             title = f"Фото {datetime.now().strftime('%d.%m.%Y %H:%M')}"
 
-        # Photo posts from bot are regular articles (artwork is for works uploaded via admin)
-        db_post_type = PostType.ARTICLE
+        # Photo posts from bot → PHOTO type, text/voice → ARTICLE
+        db_post_type = PostType.PHOTO if post_type == "photo" else PostType.ARTICLE
 
         post_service = PostService(db)
         post = await post_service.create_post(
