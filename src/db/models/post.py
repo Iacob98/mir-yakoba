@@ -74,7 +74,7 @@ class Post(Base, TimestampMixin):
         Enum(PostType, name="post_type"),
         default=PostType.ARTICLE,
         nullable=False,
-        server_default="article",
+        server_default="ARTICLE",
     )
 
     view_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

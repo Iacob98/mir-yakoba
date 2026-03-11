@@ -18,29 +18,26 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # The old migration created post_type enum with UPPERCASE values (ARTICLE, ARTWORK).
-    # Our models use lowercase. Recreate enum with correct lowercase values.
+    # The old enum has ARTICLE, ARTWORK (uppercase names).
+    # We need ARTICLE, PHOTO, WORK. Recreate the enum.
 
     # 1. Convert column to text temporarily
     op.execute("ALTER TABLE posts ALTER COLUMN post_type DROP DEFAULT")
     op.execute("ALTER TABLE posts ALTER COLUMN post_type TYPE text USING post_type::text")
     op.execute("DROP TYPE post_type")
 
-    # 2. Normalize existing data to lowercase
-    op.execute("UPDATE posts SET post_type = LOWER(post_type)")
+    # 2. Migrate ARTWORK → WORK
+    op.execute("UPDATE posts SET post_type = 'WORK' WHERE post_type = 'ARTWORK'")
 
-    # 3. Migrate artwork → work
-    op.execute("UPDATE posts SET post_type = 'work' WHERE post_type = 'artwork'")
+    # 3. Create new enum with correct values (uppercase names as SQLAlchemy uses .name)
+    op.execute("CREATE TYPE post_type AS ENUM ('ARTICLE', 'PHOTO', 'WORK')")
 
-    # 4. Create new enum with correct values
-    op.execute("CREATE TYPE post_type AS ENUM ('article', 'photo', 'work')")
-
-    # 5. Convert column back to enum
+    # 4. Convert column back to enum
     op.execute("ALTER TABLE posts ALTER COLUMN post_type TYPE post_type USING post_type::post_type")
-    op.execute("ALTER TABLE posts ALTER COLUMN post_type SET DEFAULT 'article'")
+    op.execute("ALTER TABLE posts ALTER COLUMN post_type SET DEFAULT 'ARTICLE'")
 
-    # Add document to media_type enum
-    op.execute("ALTER TYPE media_type ADD VALUE IF NOT EXISTS 'document'")
+    # 5. Add DOCUMENT to media_type enum
+    op.execute("ALTER TYPE media_type ADD VALUE IF NOT EXISTS 'DOCUMENT'")
 
 
 def downgrade() -> None:
@@ -49,9 +46,9 @@ def downgrade() -> None:
     op.execute("ALTER TABLE posts ALTER COLUMN post_type TYPE text USING post_type::text")
     op.execute("DROP TYPE post_type")
 
-    op.execute("UPDATE posts SET post_type = 'artwork' WHERE post_type = 'work'")
-    op.execute("UPDATE posts SET post_type = 'article' WHERE post_type = 'photo'")
+    op.execute("UPDATE posts SET post_type = 'ARTWORK' WHERE post_type = 'WORK'")
+    op.execute("UPDATE posts SET post_type = 'ARTICLE' WHERE post_type = 'PHOTO'")
 
     op.execute("CREATE TYPE post_type AS ENUM ('ARTICLE', 'ARTWORK')")
-    op.execute("ALTER TABLE posts ALTER COLUMN post_type TYPE post_type USING UPPER(post_type)::post_type")
+    op.execute("ALTER TABLE posts ALTER COLUMN post_type TYPE post_type USING post_type::post_type")
     op.execute("ALTER TABLE posts ALTER COLUMN post_type SET DEFAULT 'ARTICLE'")
