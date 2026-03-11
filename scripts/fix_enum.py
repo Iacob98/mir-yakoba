@@ -1,8 +1,12 @@
 """One-time script to fix post_type enum state after failed migration.
 
-Run: docker compose exec app python scripts/fix_enum.py
+Run: docker compose run --rm app python scripts/fix_enum.py
 """
 import asyncio
+import sys
+
+sys.path.insert(0, "/app")
+
 from sqlalchemy import text
 from src.db.session import async_engine
 
