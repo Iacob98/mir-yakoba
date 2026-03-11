@@ -8,11 +8,11 @@ import sys
 sys.path.insert(0, "/app")
 
 from sqlalchemy import text
-from src.db.session import async_engine
+from src.db.session import engine
 
 
 async def fix():
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         # Check current enum values
         result = await conn.execute(text(
             "SELECT enumlabel FROM pg_enum "
