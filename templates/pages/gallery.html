@@ -7,37 +7,18 @@
     <div class="text-center mb-16">
         <p class="text-sm font-medium text-gray-400 uppercase tracking-widest mb-3">Фотографии</p>
         <h1 class="font-serif text-4xl sm:text-5xl font-bold mb-4">Галерея</h1>
-        <p class="text-gray-500 max-w-md mx-auto">Фото-посты из публикаций</p>
+        <p class="text-gray-500 max-w-md mx-auto">Все изображения из публикаций</p>
     </div>
 
-    {% if posts %}
+    {% if images %}
     <div class="masonry">
-        {% for post in posts %}
-        <a href="/posts/{{ post.slug }}" class="group block mb-4">
+        {% for img in images %}
+        <a href="{% if img.post %}/posts/{{ img.post.slug }}{% else %}#{% endif %}" class="group block mb-4">
             <div class="relative overflow-hidden rounded-2xl bg-gray-100">
-                {% if post.featured_image %}
-                <img src="{{ post.featured_image }}"
-                     alt="{{ post.title }}"
+                <img src="/uploads/{{ img.file_path }}"
+                     alt="{{ img.original_name }}"
                      class="w-full object-cover group-hover:scale-105 transition duration-500"
                      loading="lazy">
-                {% else %}
-                {% set emojis = ['📷','📸','🖼','🌄','🌅','🌆','🌇','🏞','🎞','✨'] %}
-                {% set bg_colors = ['from-violet-100 to-pink-50','from-sky-100 to-cyan-50','from-amber-100 to-yellow-50','from-emerald-100 to-green-50','from-rose-100 to-red-50'] %}
-                {% set idx = range(emojis|length) | random %}
-                {% set bg_idx = range(bg_colors|length) | random %}
-                <div class="aspect-square flex items-center justify-center bg-gradient-to-br {{ bg_colors[bg_idx] }}">
-                    <span class="text-6xl">{{ emojis[idx] }}</span>
-                </div>
-                {% endif %}
-                <!-- Overlay on hover -->
-                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition duration-300 flex items-end">
-                    <div class="p-5 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition duration-300">
-                        <h3 class="text-white font-bold text-lg leading-tight">{{ post.title }}</h3>
-                        {% if post.excerpt %}
-                        <p class="text-white/70 text-sm mt-1 line-clamp-2">{{ post.excerpt }}</p>
-                        {% endif %}
-                    </div>
-                </div>
             </div>
         </a>
         {% endfor %}

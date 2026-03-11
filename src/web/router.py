@@ -66,22 +66,22 @@ async def gallery_page(
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
-    """Gallery page showing photo-type posts."""
+    """Gallery page showing all images from all published posts."""
+    from src.services.media import MediaService
+
     if user and user.is_admin:
         access_level = AccessLevel.PREMIUM_2
     else:
         access_level = user.access_level if user else AccessLevel.PUBLIC
 
-    post_service = PostService(db)
-    posts, total = await post_service.list_posts(
+    media_service = MediaService(db)
+    images = await media_service.list_all_images(
         user_access_level=access_level,
-        page=1,
-        per_page=60,
-        post_type=PostType.PHOTO,
+        limit=60,
     )
     return templates.TemplateResponse(
         "pages/gallery.html",
-        {"request": request, "title": "Галерея", "user": user, "posts": posts, "total": total},
+        {"request": request, "title": "Галерея", "user": user, "images": images},
     )
 
 
