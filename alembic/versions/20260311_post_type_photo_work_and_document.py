@@ -18,21 +18,22 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # The old enum has ARTICLE, ARTWORK (uppercase names).
-    # We need ARTICLE, PHOTO, WORK. Recreate the enum.
+    # Recreate post_type enum: old (ARTICLE, ARTWORK) → new (ARTICLE, PHOTO, WORK)
+    # SQLAlchemy uses enum member .name (uppercase) as DB values.
 
-    # 1. Convert column to text temporarily
+    # 1. Convert column to text
     op.execute("ALTER TABLE posts ALTER COLUMN post_type DROP DEFAULT")
     op.execute("ALTER TABLE posts ALTER COLUMN post_type TYPE text USING post_type::text")
     op.execute("DROP TYPE post_type")
 
-    # 2. Migrate ARTWORK → WORK
+    # 2. Normalize: ensure uppercase + rename ARTWORK → WORK
+    op.execute("UPDATE posts SET post_type = UPPER(post_type)")
     op.execute("UPDATE posts SET post_type = 'WORK' WHERE post_type = 'ARTWORK'")
 
-    # 3. Create new enum with correct values (uppercase names as SQLAlchemy uses .name)
+    # 3. Create new enum
     op.execute("CREATE TYPE post_type AS ENUM ('ARTICLE', 'PHOTO', 'WORK')")
 
-    # 4. Convert column back to enum
+    # 4. Convert back
     op.execute("ALTER TABLE posts ALTER COLUMN post_type TYPE post_type USING post_type::post_type")
     op.execute("ALTER TABLE posts ALTER COLUMN post_type SET DEFAULT 'ARTICLE'")
 
@@ -41,7 +42,6 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    # Convert column to text, recreate old enum
     op.execute("ALTER TABLE posts ALTER COLUMN post_type DROP DEFAULT")
     op.execute("ALTER TABLE posts ALTER COLUMN post_type TYPE text USING post_type::text")
     op.execute("DROP TYPE post_type")

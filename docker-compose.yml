@@ -25,6 +25,7 @@ services:
       - DEBUG=${DEBUG:-false}
       - BASE_URL=${BASE_URL:-http://localhost:8000}
       - UPLOAD_DIR=/app/uploads
+      - RUN_MIGRATIONS=true
     volumes:
       - ./uploads:/app/uploads
       - ./src:/app/src:ro

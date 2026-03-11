@@ -21,8 +21,9 @@ COPY static/ static/
 COPY templates/ templates/
 
 # Create directories
-RUN mkdir -p /app/uploads/images /app/uploads/audios /app/uploads/videos
+RUN mkdir -p /app/uploads/images /app/uploads/audios /app/uploads/videos /app/uploads/documents
 
 EXPOSE 8000
 
+ENTRYPOINT ["scripts/entrypoint.sh"]
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
