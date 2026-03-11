@@ -20,6 +20,7 @@ settings.upload_dir.mkdir(parents=True, exist_ok=True)
 (settings.upload_dir / "images").mkdir(exist_ok=True)
 (settings.upload_dir / "audios").mkdir(exist_ok=True)
 (settings.upload_dir / "videos").mkdir(exist_ok=True)
+(settings.upload_dir / "documents").mkdir(exist_ok=True)
 
 
 @asynccontextmanager
@@ -65,12 +66,14 @@ async def add_security_headers(request: Request, call_next):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     response.headers["Content-Security-Policy"] = (
         "default-src 'self'; "
-        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net; "
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.tailwindcss.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "
         "style-src 'self' 'unsafe-inline'; "
         "img-src 'self' data: blob: https:; "
         "media-src 'self' blob:; "
         "font-src 'self' data:; "
         "connect-src 'self'; "
+        "frame-src 'self' blob:; "
+        "worker-src 'self' blob:; "
         "frame-ancestors 'none';"
     )
     return response

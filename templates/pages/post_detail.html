@@ -101,7 +101,27 @@
             </figure>
             {% elif media.media_type.value == 'document' %}
             <div class="bg-gray-50 rounded-2xl overflow-hidden">
-                <iframe src="/uploads/{{ media.file_path }}" class="w-full h-[600px]" loading="lazy"></iframe>
+                <div class="pdf-viewer" data-pdf-url="/uploads/{{ media.file_path }}">
+                    <!-- Toolbar -->
+                    <div class="flex items-center justify-between px-4 py-2 bg-gray-100 border-b">
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="pdf-prev px-2 py-1 text-sm bg-white border rounded hover:bg-gray-50" disabled>&larr;</button>
+                            <span class="text-sm text-gray-600">
+                                <span class="pdf-page-num">1</span> / <span class="pdf-page-count">-</span>
+                            </span>
+                            <button type="button" class="pdf-next px-2 py-1 text-sm bg-white border rounded hover:bg-gray-50" disabled>&rarr;</button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button type="button" class="pdf-zoom-out px-2 py-1 text-sm bg-white border rounded hover:bg-gray-50">-</button>
+                            <span class="pdf-zoom-level text-sm text-gray-600">100%</span>
+                            <button type="button" class="pdf-zoom-in px-2 py-1 text-sm bg-white border rounded hover:bg-gray-50">+</button>
+                        </div>
+                    </div>
+                    <!-- Canvas container -->
+                    <div class="pdf-canvas-container overflow-auto" style="max-height: 700px;">
+                        <canvas class="pdf-canvas mx-auto block"></canvas>
+                    </div>
+                </div>
                 <div class="px-6 py-3 flex items-center justify-between border-t">
                     <span class="text-sm text-gray-500">{{ media.original_name }}</span>
                     <a href="/uploads/{{ media.file_path }}" download class="text-sm text-blue-600 hover:text-blue-800 font-medium">Скачать PDF</a>
@@ -110,6 +130,67 @@
             {% endif %}
         {% endfor %}
     </div>
+    {% endif %}
+
+    <!-- PDF.js viewer -->
+    {% set has_pdf = post.media | selectattr('media_type.value', 'equalto', 'document') | list %}
+    {% if has_pdf %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+    (function() {
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        document.querySelectorAll('.pdf-viewer').forEach(function(viewer) {
+            var url = viewer.dataset.pdfUrl;
+            var canvas = viewer.querySelector('.pdf-canvas');
+            var ctx = canvas.getContext('2d');
+            var pageNum = 1;
+            var scale = 1.5;
+            var pdfDoc = null;
+
+            var prevBtn = viewer.querySelector('.pdf-prev');
+            var nextBtn = viewer.querySelector('.pdf-next');
+            var pageNumEl = viewer.querySelector('.pdf-page-num');
+            var pageCountEl = viewer.querySelector('.pdf-page-count');
+            var zoomInBtn = viewer.querySelector('.pdf-zoom-in');
+            var zoomOutBtn = viewer.querySelector('.pdf-zoom-out');
+            var zoomLevelEl = viewer.querySelector('.pdf-zoom-level');
+
+            function renderPage(num) {
+                pdfDoc.getPage(num).then(function(page) {
+                    var viewport = page.getViewport({ scale: scale });
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+                    page.render({ canvasContext: ctx, viewport: viewport });
+                    pageNumEl.textContent = num;
+                    prevBtn.disabled = (num <= 1);
+                    nextBtn.disabled = (num >= pdfDoc.numPages);
+                });
+            }
+
+            function updateZoomLabel() {
+                zoomLevelEl.textContent = Math.round(scale / 1.5 * 100) + '%';
+            }
+
+            prevBtn.onclick = function() { if (pageNum > 1) { pageNum--; renderPage(pageNum); } };
+            nextBtn.onclick = function() { if (pageNum < pdfDoc.numPages) { pageNum++; renderPage(pageNum); } };
+            zoomInBtn.onclick = function() { scale = Math.min(scale + 0.3, 4); updateZoomLabel(); renderPage(pageNum); };
+            zoomOutBtn.onclick = function() { scale = Math.max(scale - 0.3, 0.5); updateZoomLabel(); renderPage(pageNum); };
+
+            pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                pdfDoc = pdf;
+                pageCountEl.textContent = pdf.numPages;
+                renderPage(1);
+            }).catch(function(err) {
+                var errMsg = document.createElement('p');
+                errMsg.className = 'text-red-500 p-4';
+                errMsg.textContent = 'Ошибка загрузки PDF';
+                canvas.parentElement.replaceChild(errMsg, canvas);
+                console.error('PDF error:', err);
+            });
+        });
+    })();
+    </script>
     {% endif %}
 
     <!-- Divider -->
