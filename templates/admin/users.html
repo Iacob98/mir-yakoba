@@ -56,6 +56,7 @@
                     {% else %}bg-gray-100 text-gray-800{% endif %}">
                     {{ u.access_level.name | title }}
                 </span>
+                <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">Lv.{{ u.level }} · {{ u.xp }} XP</span>
                 {% if u.is_admin %}
                 <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Админ</span>
                 {% endif %}
@@ -79,6 +80,7 @@
                 <tr>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Пользователь</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Telegram</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Уровень</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Доступ</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Статус</th>
                     <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Регистрация</th>
@@ -96,6 +98,12 @@
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {{ u.telegram_id }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-bold text-gray-900">{{ u.level }}</span>
+                            <span class="text-xs text-gray-400">{{ u.xp }} XP</span>
+                        </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
                         <span class="px-2 py-1 text-xs rounded-full
@@ -125,7 +133,7 @@
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="6" class="px-6 py-8 text-center text-gray-500">
+                    <td colspan="7" class="px-6 py-8 text-center text-gray-500">
                         Пользователи не найдены
                     </td>
                 </tr>
