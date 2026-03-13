@@ -28,6 +28,7 @@ def get_reply_keyboard(is_admin: bool = False) -> ReplyKeyboardMarkup:
 def get_main_menu_keyboard(is_admin: bool = False) -> InlineKeyboardMarkup:
     """Get main menu keyboard based on user role."""
     buttons = [
+        [InlineKeyboardButton(text="⭐ Мой уровень", callback_data="menu_level")],
         [InlineKeyboardButton(text="✏️ Сменить ник", callback_data="menu_nickname")],
         [InlineKeyboardButton(text="🔐 Получить код входа", callback_data="menu_login")],
     ]
@@ -118,11 +119,68 @@ async def cmd_help(message: Message):
         "📚 <b>Доступные команды:</b>\n\n"
         "/start - Главное меню\n"
         "/menu - Показать меню\n"
+        "/level - Мой уровень и XP\n"
         "/login - Получить код для входа на сайт\n"
         "/newpost - Создать новый пост (для админов)\n"
         "/cancel - Отменить текущее действие\n"
         "/help - Показать эту справку"
     )
+
+
+def _format_level_message(user_db) -> str:
+    """Format level info message for a user."""
+    from src.services.level import XP_THRESHOLDS, XP_COMMENT, XP_REPLY, XP_DAILY_LOGIN
+
+    xp = user_db.xp
+    level = user_db.level
+    max_level = len(XP_THRESHOLDS) - 1
+
+    # Progress bar
+    if level < max_level:
+        current_th = XP_THRESHOLDS[level]
+        next_th = XP_THRESHOLDS[level + 1]
+        progress = (xp - current_th) / (next_th - current_th)
+        filled = int(progress * 10)
+        bar = "▓" * filled + "░" * (10 - filled)
+        progress_text = f"{bar}  {xp}/{next_th} XP"
+    else:
+        bar = "▓" * 10
+        progress_text = f"{bar}  {xp} XP (MAX)"
+
+    # Achievements list
+    achievements_text = ""
+    if user_db.achievements:
+        achs = sorted(user_db.achievements, key=lambda a: a.level)
+        achievements_text = "\n\n🏆 <b>Достижения:</b>\n"
+        for ach in achs:
+            achievements_text += f"  • Lv.{ach.level} — {ach.title}\n"
+
+    return (
+        f"⭐ <b>Уровень {level}</b>\n"
+        f"{progress_text}\n"
+        f"{achievements_text}\n"
+        f"── <b>Как получить XP</b> ──\n"
+        f"💬 Комментарий: +{XP_COMMENT} XP\n"
+        f"↩️ Ответ на комментарий: +{XP_REPLY} XP\n"
+        f"📅 Ежедневный вход: +{XP_DAILY_LOGIN} XP\n\n"
+        f"🎖 Достижения на уровнях: 1, 5, 10"
+    )
+
+
+@router.message(Command("level"))
+async def cmd_level(message: Message):
+    """Show user's level, XP progress and rules."""
+    user = message.from_user
+
+    async with get_db_context() as db:
+        auth_service = AuthService(db)
+        db_user = await auth_service.get_user_by_telegram_id(user.id)
+
+        if not db_user:
+            await message.answer("❌ Вы ещё не зарегистрированы. Нажмите /start")
+            return
+
+        await message.answer(_format_level_message(db_user))
 
 
 # ============= REPLY KEYBOARD HANDLERS =============
@@ -314,6 +372,31 @@ async def callback_menu_back_clear(callback: CallbackQuery, state: FSMContext):
         "📋 <b>Главное меню</b>",
         reply_markup=get_main_menu_keyboard(is_admin),
     )
+    await callback.answer()
+
+
+@router.callback_query(F.data == "menu_level")
+async def callback_menu_level(callback: CallbackQuery):
+    """Show level info from menu."""
+    user = callback.from_user
+
+    async with get_db_context() as db:
+        auth_service = AuthService(db)
+        db_user = await auth_service.get_user_by_telegram_id(user.id)
+
+        if not db_user:
+            await callback.answer("❌ Пользователь не найден", show_alert=True)
+            return
+
+        keyboard = InlineKeyboardMarkup(inline_keyboard=[
+            [InlineKeyboardButton(text="◀️ Назад в меню", callback_data="menu_back")]
+        ])
+
+        await callback.message.edit_text(
+            _format_level_message(db_user),
+            reply_markup=keyboard,
+        )
+
     await callback.answer()
 
 
