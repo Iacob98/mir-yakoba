@@ -17,7 +17,7 @@ from src.db.models.user import User
 logger = logging.getLogger(__name__)
 
 # XP thresholds per level (index = level)
-XP_THRESHOLDS = [0, 30, 80, 150, 250, 400, 600, 850, 1150, 1500, 2000]
+XP_THRESHOLDS = [0, 15, 40, 75, 125, 200, 300, 425, 575, 750, 1000]
 
 # Milestone levels that trigger achievements
 MILESTONE_LEVELS = {1, 5, 10}
