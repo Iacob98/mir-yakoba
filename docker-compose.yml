@@ -26,6 +26,7 @@ services:
       - BASE_URL=${BASE_URL:-http://localhost:8000}
       - UPLOAD_DIR=/app/uploads
       - RUN_MIGRATIONS=true
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - ./uploads:/app/uploads
       - ./src:/app/src:ro
