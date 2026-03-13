@@ -3,6 +3,9 @@
     <div class="flex items-start justify-between">
         <div class="flex items-center space-x-2 mb-{% if comment.parent_id %}1{% else %}2{% endif %}">
             <span class="font-medium {% if comment.parent_id %}text-gray-800 text-sm{% else %}text-gray-900{% endif %}">{{ comment.author.display_name }}</span>
+            {% if comment.author.level > 0 %}
+            <span class="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-xs rounded-full font-medium">Lv.{{ comment.author.level }}</span>
+            {% endif %}
             <span class="text-gray-400 {% if comment.parent_id %}text-xs{% else %}text-sm{% endif %}">{{ comment.created_at.strftime('%d.%m в %H:%M') if comment.parent_id else comment.created_at.strftime('%d.%m.%Y в %H:%M') }}</span>
         </div>
         {% if user and (user.id == comment.author_id or user.is_admin) %}

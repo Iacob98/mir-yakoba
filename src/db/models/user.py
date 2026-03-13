@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import BigInteger, Boolean, DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import BigInteger, Boolean, DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -12,6 +12,7 @@ from src.db.base import Base, TimestampMixin
 if TYPE_CHECKING:
     from src.db.models.comment import Comment
     from src.db.models.post import Post
+    from src.db.models.achievement import Achievement
 
 
 class AccessLevel(enum.IntEnum):
@@ -43,12 +44,22 @@ class User(Base, TimestampMixin):
         DateTime(timezone=True), nullable=True
     )
 
+    # Level system
+    xp: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    level: Mapped[int] = mapped_column(Integer, default=0, server_default="0", nullable=False)
+    last_daily_xp: Mapped[Optional[datetime]] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     # Relationships
     posts: Mapped[list["Post"]] = relationship(
         "Post", back_populates="author", lazy="selectin"
     )
     comments: Mapped[list["Comment"]] = relationship(
         "Comment", back_populates="author", lazy="selectin"
+    )
+    achievements: Mapped[list["Achievement"]] = relationship(
+        "Achievement", back_populates="user", lazy="selectin"
     )
 
 

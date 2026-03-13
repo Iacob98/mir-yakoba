@@ -27,8 +27,19 @@ settings.upload_dir.mkdir(parents=True, exist_ok=True)
 async def lifespan(app: FastAPI):
     # Startup
     await get_redis()
+    # Create arq pool for enqueueing background tasks
+    try:
+        from arq.connections import RedisSettings, create_pool
+        pool = await create_pool(RedisSettings.from_dsn(settings.redis_url))
+        app.state.arq_pool = pool
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).warning(f"Failed to create arq pool: {e}")
+        app.state.arq_pool = None
     yield
     # Shutdown
+    if getattr(app.state, "arq_pool", None):
+        await app.state.arq_pool.close()
     await close_redis()
 
 

@@ -202,6 +202,14 @@ async def verify_by_code_only(
     user.last_login = datetime.now(timezone.utc)
     await db.commit()
 
+    # Award daily login XP
+    try:
+        from src.services.level import LevelService
+        level_service = LevelService(db)
+        await level_service.award_daily_xp(user.id)
+    except Exception:
+        pass  # Non-critical
+
     # Create session
     token = await auth_service.create_session(user.id)
 

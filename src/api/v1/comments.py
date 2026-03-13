@@ -12,6 +12,7 @@ from src.db.session import get_db
 from src.services.auth import AuthService
 from src.services.comment import CommentService
 from src.services.notification import notify_admin_new_comment, notify_comment_reply
+from src.services.level import LevelService, XP_COMMENT, XP_REPLY
 from src.services.post import PostService
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,21 @@ async def create_comment(
         content=content,
         parent_id=parent_id,
     )
+
+    # Award XP
+    level_service = LevelService(db)
+    xp_amount = XP_REPLY if parent_id else XP_COMMENT
+    new_xp, new_level, milestone = await level_service.add_xp(user.id, xp_amount)
+
+    # Queue achievement generation if milestone reached
+    if milestone:
+        try:
+            pool = request.app.state.arq_pool
+            if pool:
+                await pool.enqueue_job("process_achievement", str(user.id), milestone)
+                logger.info(f"Queued achievement for user {user.id}, milestone {milestone}")
+        except Exception as e:
+            logger.error(f"Failed to queue achievement task: {e}")
 
     post_service = PostService(db)
     post = await post_service.get_by_id(post_id)

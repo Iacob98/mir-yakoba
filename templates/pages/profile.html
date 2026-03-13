@@ -43,7 +43,33 @@
         </button>
     </form>
 
-    <div class="space-y-4 pt-8 border-t border-gray-100">
+    <!-- Level & XP -->
+    <div class="space-y-3 pt-8 border-t border-gray-100">
+        <div class="flex justify-between items-center">
+            <span class="text-sm text-gray-400">Уровень</span>
+            <span class="text-sm font-bold">{{ user.level }}</span>
+        </div>
+        <div>
+            <div class="flex justify-between text-xs text-gray-400 mb-1">
+                <span>XP: {{ user.xp }}</span>
+                {% set thresholds = [0, 50, 150, 300, 500, 800, 1200, 1700, 2300, 3000, 4000] %}
+                {% if user.level < thresholds|length - 1 %}
+                <span>{{ thresholds[user.level + 1] }}</span>
+                {% else %}
+                <span>MAX</span>
+                {% endif %}
+            </div>
+            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                {% if user.level < thresholds|length - 1 %}
+                {% set current_threshold = thresholds[user.level] %}
+                {% set next_threshold = thresholds[user.level + 1] %}
+                {% set progress = ((user.xp - current_threshold) / (next_threshold - current_threshold) * 100) | int %}
+                <div class="h-full bg-gray-900 rounded-full transition-all" style="width: {{ [progress, 100] | min }}%"></div>
+                {% else %}
+                <div class="h-full bg-gray-900 rounded-full" style="width: 100%"></div>
+                {% endif %}
+            </div>
+        </div>
         <div class="flex justify-between items-center">
             <span class="text-sm text-gray-400">Уровень доступа</span>
             <span class="text-sm font-medium">
@@ -55,6 +81,30 @@
             </span>
         </div>
     </div>
+
+    <!-- Achievements -->
+    {% if user.achievements %}
+    <div class="pt-8 border-t border-gray-100">
+        <h2 class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">Достижения</h2>
+        <div class="space-y-4">
+            {% for ach in user.achievements | sort(attribute='level') %}
+            <div class="flex items-start gap-3">
+                {% if ach.image_path %}
+                <img src="/uploads/{{ ach.image_path }}" alt="{{ ach.title }}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
+                {% else %}
+                <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 text-lg font-bold text-gray-400">
+                    {{ ach.level }}
+                </div>
+                {% endif %}
+                <div>
+                    <p class="text-sm font-medium">{{ ach.title }}</p>
+                    <p class="text-xs text-gray-400">{{ ach.description[:80] }}{% if ach.description|length > 80 %}...{% endif %}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
     <div class="mt-8 pt-8 border-t border-gray-100 text-center">
         <a href="/api/v1/auth/logout" class="text-sm text-red-400 hover:text-red-600 transition">
