@@ -52,7 +52,7 @@
         <div>
             <div class="flex justify-between text-xs text-gray-400 mb-1">
                 <span>XP: {{ user.xp }}</span>
-                {% set thresholds = [0, 50, 150, 300, 500, 800, 1200, 1700, 2300, 3000, 4000] %}
+                {% set thresholds = [0, 30, 80, 150, 250, 400, 600, 850, 1150, 1500, 2000] %}
                 {% if user.level < thresholds|length - 1 %}
                 <span>{{ thresholds[user.level + 1] }}</span>
                 {% else %}
