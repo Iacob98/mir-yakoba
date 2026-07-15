@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +10,7 @@ from src.db.session import get_db
 from src.db.models.user import AccessLevel
 from src.db.models.post import PostStatus, PostType, PostVisibility
 from src.services.auth import AuthService
+from src.services.media import MediaService
 from src.services.notification import notify_post_published
 from src.services.post import PostService
 from src.services.settings import SettingsService
@@ -52,8 +53,6 @@ async def home(
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
-    from src.services.media import MediaService
-
     if user and user.is_admin:
         access_level = AccessLevel.PREMIUM_2
     else:
@@ -85,8 +84,6 @@ async def gallery_page(
     db: AsyncSession = Depends(get_db),
 ):
     """Gallery page showing all images from all published posts."""
-    from src.services.media import MediaService
-
     if user and user.is_admin:
         access_level = AccessLevel.PREMIUM_2
     else:
@@ -175,7 +172,7 @@ async def update_nickname(
 @web_router.get("/partials/posts", response_class=HTMLResponse)
 async def posts_partial(
     request: Request,
-    page: int = 1,
+    page: int = Query(1, ge=1),
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
@@ -191,7 +188,6 @@ async def posts_partial(
         user_access_level=access_level,
         page=page,
         per_page=10,
-        post_type=PostType.ARTICLE,
     )
 
     has_more = (page * 10) < total
