@@ -540,7 +540,7 @@ async def admin_save_settings(
 @web_router.get("/admin/users", response_class=HTMLResponse)
 async def admin_users_list(
     request: Request,
-    page: int = 1,
+    page: int = Query(1, ge=1),
     search: str = "",
     user=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
@@ -744,7 +744,7 @@ async def post_detail(
 async def search_page(
     request: Request,
     q: str = "",
-    page: int = 1,
+    page: int = Query(1, ge=1),
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
@@ -787,7 +787,7 @@ async def search_page(
 async def search_results_partial(
     request: Request,
     q: str = "",
-    page: int = 1,
+    page: int = Query(1, ge=1),
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
