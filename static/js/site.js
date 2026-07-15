@@ -16,20 +16,27 @@
       toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
     });
     menu.addEventListener('click', function (e) {
-      if (e.target.tagName === 'A') {
+      if (e.target.closest('a')) {
         menu.classList.remove('open');
         toggle.setAttribute('aria-expanded', 'false');
       }
     });
   }
 
+  // Stagger is assigned per IO callback batch (elements entering the viewport
+  // together), and the inline delay is cleared after the reveal so it never
+  // delays the element's own hover transitions.
   var observer = hasIO
     ? new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add('is-visible');
-            observer.unobserve(entry.target);
-          }
+        var visible = entries.filter(function (e) { return e.isIntersecting; });
+        visible.forEach(function (entry, i) {
+          var el = entry.target;
+          el.style.transitionDelay = Math.min(i, 6) * 60 + 'ms';
+          el.classList.add('is-visible');
+          el.addEventListener('transitionend', function () {
+            el.style.transitionDelay = '';
+          }, { once: true });
+          observer.unobserve(el);
         });
       }, { rootMargin: '0px 0px -8% 0px', threshold: 0.05 })
     : null;
@@ -37,27 +44,34 @@
   function observeReveals() {
     if (!observer) return;
     var els = document.querySelectorAll('[data-reveal]:not(.is-observed)');
-    els.forEach(function (el, i) {
+    els.forEach(function (el) {
       el.classList.add('is-observed');
-      el.style.transitionDelay = Math.min(i, 6) * 60 + 'ms';
       observer.observe(el);
     });
   }
 
   // JS fallback for browsers without CSS scroll-driven animations.
+  // Listeners are bound once at module scope; the bar is re-resolved per page
+  // (hx-boost replaces the whole body, so element references go stale).
+  var progressBar = null;
+  var needsProgressFallback = !(window.CSS && CSS.supports('animation-timeline: scroll()'));
+
+  function updateProgress() {
+    if (!progressBar) return;
+    var doc = document.documentElement;
+    var max = doc.scrollHeight - window.innerHeight;
+    progressBar.style.width = (max > 0 ? Math.min(1, window.scrollY / max) * 100 : 0) + '%';
+  }
+
+  if (needsProgressFallback) {
+    window.addEventListener('scroll', updateProgress, { passive: true });
+    window.addEventListener('resize', updateProgress);
+  }
+
   function initProgress() {
-    var bar = document.getElementById('progress');
-    if (!bar || bar.dataset.bound) return;
-    if (window.CSS && CSS.supports('animation-timeline: scroll()')) return;
-    bar.dataset.bound = '1';
-    function update() {
-      var doc = document.documentElement;
-      var max = doc.scrollHeight - window.innerHeight;
-      bar.style.width = (max > 0 ? Math.min(1, window.scrollY / max) * 100 : 0) + '%';
-    }
-    window.addEventListener('scroll', update, { passive: true });
-    window.addEventListener('resize', update);
-    update();
+    if (!needsProgressFallback) return;
+    progressBar = document.getElementById('progress');
+    updateProgress();
   }
 
   function initAll() {
@@ -72,4 +86,10 @@
     initAll();
   }
   document.addEventListener('htmx:afterSettle', initAll);
+
+  // Body swaps (hx-boost) replace observed elements; drop stale IO targets so
+  // detached subtrees can be collected. New content re-observes after settle.
+  document.addEventListener('htmx:beforeSwap', function (e) {
+    if (observer && e.target === document.body) observer.disconnect();
+  });
 })();
