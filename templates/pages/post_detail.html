@@ -20,6 +20,7 @@
         </p>
         <h1>{{ post.title }}</h1>
         {% if post.excerpt %}<p class="dek">{{ post.excerpt }}</p>{% endif %}
+        {% if post.author or (user and user.is_admin) %}
         <div class="byline">
             {% if post.author %}
             <div class="ava">{{ post.author.display_name[0] | upper }}</div>
@@ -32,6 +33,7 @@
             <a href="/admin/posts/{{ post.id }}/edit" class="btn btn-ghost" style="margin-left: auto;">Редактировать</a>
             {% endif %}
         </div>
+        {% endif %}
     </header>
 
     {% if post.featured_image %}
@@ -78,37 +80,43 @@
 
         {% set has_pdf = post.media | selectattr('media_type.value', 'equalto', 'document') | list %}
         {% if has_pdf %}
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
         <script>
         (function() {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+            function initPdf() {
+                pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                document.querySelectorAll('.pdf-viewer:not([data-init])').forEach(function(viewer) {
+                    viewer.dataset.init = '1';
+                    var url = viewer.dataset.pdfUrl;
+                    var container = viewer.querySelector('.pdf-pages');
+                    var containerWidth = viewer.clientWidth - 16;
 
-            document.querySelectorAll('.pdf-viewer').forEach(function(viewer) {
-                var url = viewer.dataset.pdfUrl;
-                var container = viewer.querySelector('.pdf-pages');
-                var containerWidth = viewer.clientWidth - 16;
-
-                pdfjsLib.getDocument(url).promise.then(function(pdf) {
-                    for (var i = 1; i <= pdf.numPages; i++) {
-                        (function(pageNum) {
-                            pdf.getPage(pageNum).then(function(page) {
-                                var scale = containerWidth / page.getViewport({ scale: 1 }).width;
-                                var viewport = page.getViewport({ scale: scale });
-                                var canvas = document.createElement('canvas');
-                                canvas.width = viewport.width;
-                                canvas.height = viewport.height;
-                                container.appendChild(canvas);
-                                page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
-                            });
-                        })(i);
-                    }
-                }).catch(function(err) {
-                    var errMsg = document.createElement('p');
-                    errMsg.className = 'pdf-error';
-                    errMsg.textContent = 'Ошибка загрузки PDF';
-                    container.appendChild(errMsg);
+                    pdfjsLib.getDocument(url).promise.then(function(pdf) {
+                        for (var i = 1; i <= pdf.numPages; i++) {
+                            (function(pageNum) {
+                                pdf.getPage(pageNum).then(function(page) {
+                                    var scale = containerWidth / page.getViewport({ scale: 1 }).width;
+                                    var viewport = page.getViewport({ scale: scale });
+                                    var canvas = document.createElement('canvas');
+                                    canvas.width = viewport.width;
+                                    canvas.height = viewport.height;
+                                    container.appendChild(canvas);
+                                    page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport });
+                                });
+                            })(i);
+                        }
+                    }).catch(function(err) {
+                        var errMsg = document.createElement('p');
+                        errMsg.className = 'pdf-error';
+                        errMsg.textContent = 'Ошибка загрузки PDF';
+                        container.appendChild(errMsg);
+                    });
                 });
-            });
+            }
+            if (window.pdfjsLib) { initPdf(); return; }
+            var s = document.createElement('script');
+            s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+            s.onload = initPdf;
+            document.head.appendChild(s);
         })();
         </script>
         {% endif %}
@@ -121,7 +129,7 @@
         <form hx-post="/api/v1/comments/{{ post.id }}"
               hx-target="#comments-list"
               hx-swap="afterbegin"
-              hx-on::after-request="this.reset()"
+              hx-on::after-request="if(event.detail.successful) this.reset()"
               hx-disabled-elt="button[type='submit']"
               style="margin-bottom: 32px;">
             <textarea name="content"

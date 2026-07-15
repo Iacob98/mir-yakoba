@@ -53,13 +53,13 @@
         </div>
         {% endif %}
 
-        <div id="replies-{{ comment.id }}" class="{% if comment._replies is defined and comment._replies %}comment-replies{% endif %}">
-            {% if comment._replies is defined and comment._replies %}
-                {% for reply in comment._replies %}
+        <div id="replies-{{ comment.id }}" class="comment-replies">
+            {%- if comment._replies is defined and comment._replies -%}
+                {%- for reply in comment._replies -%}
                     {{ render_comment(reply, post_id, user, depth + 1) }}
-                {% endfor %}
-            {% endif %}
-        </div>
+                {%- endfor -%}
+            {%- endif -%}
+</div>
     </div>
 </div>
 {% endmacro %}
@@ -71,42 +71,6 @@
     {% endfor %}
 </div>
 
-<script>
-document.addEventListener('click', function(e) {
-    // Handle reply button click
-    if (e.target.classList.contains('reply-btn')) {
-        const commentId = e.target.dataset.commentId;
-        const container = document.getElementById('reply-form-' + commentId);
-        if (container) {
-            container.classList.toggle('hidden');
-            if (!container.classList.contains('hidden')) {
-                const textarea = container.querySelector('textarea');
-                if (textarea) textarea.focus();
-            }
-        }
-    }
-    // Handle cancel button click
-    if (e.target.classList.contains('cancel-reply')) {
-        const container = e.target.closest('.reply-form-container');
-        if (container) {
-            container.classList.add('hidden');
-            const form = container.querySelector('form');
-            if (form) form.reset();
-        }
-    }
-});
-
-// Hide form and reset after successful submission
-document.body.addEventListener('htmx:afterRequest', function(e) {
-    if (e.detail.successful && e.target.classList.contains('reply-form')) {
-        const container = e.target.closest('.reply-form-container');
-        if (container) {
-            container.classList.add('hidden');
-            e.target.reset();
-        }
-    }
-});
-</script>
 {% else %}
-<p class="dek">Комментариев пока нет.</p>
+<p class="dek no-comments">Комментариев пока нет.</p>
 {% endif %}

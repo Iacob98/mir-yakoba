@@ -92,4 +92,37 @@
   document.addEventListener('htmx:beforeSwap', function (e) {
     if (observer && e.target === document.body) observer.disconnect();
   });
+  // Comment reply forms (event delegation; comment partials arrive via htmx
+  // swaps, so listeners live here — bound once — instead of inline scripts).
+  document.addEventListener('click', function (e) {
+    var t = e.target;
+    if (!t.classList) return;
+    if (t.classList.contains('reply-btn')) {
+      var container = document.getElementById('reply-form-' + t.dataset.commentId);
+      if (container) {
+        container.classList.toggle('hidden');
+        if (!container.classList.contains('hidden')) {
+          var textarea = container.querySelector('textarea');
+          if (textarea) textarea.focus();
+        }
+      }
+    }
+    if (t.classList.contains('cancel-reply')) {
+      var wrap = t.closest('.reply-form-container');
+      if (wrap) {
+        wrap.classList.add('hidden');
+        var form = wrap.querySelector('form');
+        if (form) form.reset();
+      }
+    }
+  });
+  document.addEventListener('htmx:afterRequest', function (e) {
+    if (e.detail.successful && e.target.classList && e.target.classList.contains('reply-form')) {
+      var wrap = e.target.closest('.reply-form-container');
+      if (wrap) {
+        wrap.classList.add('hidden');
+        e.target.reset();
+      }
+    }
+  });
 })();

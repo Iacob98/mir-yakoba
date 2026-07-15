@@ -366,6 +366,8 @@ h3 { font-size: var(--fs-h3); font-weight: 650; line-height: 1.35; margin: 0; }
 .comment-replies { border-left: 1px solid var(--border); padding-left: 16px; margin-top: 4px; }
 .comment-replies .comment { border-top: 0; padding: 12px 0; }
 .reply-form-container form { margin-top: 10px; }
+.comment ~ .no-comments { display: none; }
+.comment-replies:empty { display: none; }
 
 /* ─── forms ────────────────────────────────────────────────────────── */
 .field {
