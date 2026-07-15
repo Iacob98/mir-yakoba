@@ -3,55 +3,68 @@
 {% block title %}Главная{% endblock %}
 
 {% block content %}
-<!-- Hero Section -->
-<section class="relative overflow-hidden">
-    <div class="max-w-6xl mx-auto px-6 py-16 md:py-24">
-        <div class="flex flex-col md:flex-row items-center gap-12">
-            <!-- Text -->
-            <div class="flex-1 text-center md:text-left">
-                <p class="text-sm font-medium text-gray-400 uppercase tracking-widest mb-4">Персональный блог</p>
-                <h1 class="font-serif text-4xl sm:text-5xl md:text-6xl font-bold leading-tight mb-6">
-                    {{ hero.title }}
-                </h1>
-                <p class="text-lg text-gray-500 max-w-lg mx-auto md:mx-0 leading-relaxed">
-                    {{ hero.subtitle }}
-                </p>
-                <div class="mt-8 flex flex-wrap gap-4 justify-center md:justify-start">
-                    <a href="/gallery" class="bg-gray-900 text-white px-7 py-3 rounded-full text-sm font-medium hover:bg-gray-700 transition">
-                        Смотреть работы
-                    </a>
-                    <a href="#posts" class="border border-gray-300 px-7 py-3 rounded-full text-sm font-medium text-gray-600 hover:border-gray-900 hover:text-gray-900 transition">
-                        Читать блог
-                    </a>
-                </div>
-            </div>
-            <!-- Avatar -->
-            <div class="flex-shrink-0">
-                <img src="/static/{{ hero.avatar }}"
-                     alt="Якоб"
-                     class="w-48 h-48 md:w-64 md:h-64 rounded-2xl object-cover shadow-2xl shadow-gray-200">
-            </div>
+<!-- Hero -->
+<section class="hero">
+    <div class="container hero-inner">
+        {% if hero.avatar %}
+        <img class="hero-avatar" src="/static/{{ hero.avatar }}" alt="Якоб — автор блога" data-reveal>
+        {% endif %}
+        <h1 data-reveal>{{ hero.title }}</h1>
+        <p class="lead" data-reveal>{{ hero.subtitle }}</p>
+    </div>
+</section>
+
+<!-- Journal feed (pinned card + log rows come from the partial) -->
+<section class="section" id="posts" style="padding-top: 0; border-top: 0;">
+    <div class="container">
+        <div class="row-between section-head" data-reveal>
+            <h2>Свежие записи</h2>
+        </div>
+        <div id="posts-container"
+             hx-get="/partials/posts"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <div class="feed-sentinel"><div class="spinner"></div></div>
         </div>
     </div>
 </section>
 
-<!-- Latest Posts Section -->
-<section id="posts" class="max-w-6xl mx-auto px-6 py-16">
-    <div class="flex items-end justify-between mb-10">
-        <div>
-            <p class="text-sm font-medium text-gray-400 uppercase tracking-widest mb-2">Блог</p>
-            <h2 class="font-serif text-3xl font-bold">Последние записи</h2>
+<!-- Gallery strip -->
+{% if recent_images %}
+<section class="section" id="gallery">
+    <div class="container">
+        <div class="row-between section-head" data-reveal>
+            <h2>Последние работы</h2>
+            <a class="btn btn-ghost btn-arrow" href="/gallery">Открыть галерею</a>
         </div>
-    </div>
-
-    <!-- Posts loaded via htmx -->
-    <div id="posts-container"
-         hx-get="/partials/posts"
-         hx-trigger="load"
-         hx-swap="innerHTML">
-        <div class="flex justify-center py-16">
-            <div class="animate-spin rounded-full h-8 w-8 border-2 border-gray-900 border-t-transparent"></div>
+        <div class="gallery-strip">
+            {% for img in recent_images %}
+            <a href="{% if img.post %}/posts/{{ img.post.slug }}{% else %}/gallery{% endif %}" data-reveal>
+                <img src="/uploads/{{ img.file_path }}" alt="{{ img.original_name }}" loading="lazy">
+            </a>
+            {% endfor %}
         </div>
     </div>
 </section>
+{% endif %}
+
+<!-- Author + login CTA (guests only) -->
+{% if not user %}
+<section class="section" id="author">
+    <div class="container grid-1-2">
+        {% if hero.avatar %}
+        <img class="author-photo" src="/static/{{ hero.avatar }}" alt="Якоб — автор блога" data-reveal>
+        {% endif %}
+        <div data-reveal>
+            <p class="kicker">Об авторе</p>
+            <h2 style="max-width: 24ch;">Читайте со своего уровня</h2>
+            <p class="lead" style="margin-top: 14px;">За комментарии и чтение начисляется опыт, бот присылает карточки достижений, а команда /level показывает, сколько осталось до следующего уровня. Вход занимает полминуты.</p>
+            <div class="row hero-actions">
+                <a class="btn btn-primary" href="/login">Войти через Telegram</a>
+                <a class="btn btn-ghost btn-arrow" href="/works">Мои работы</a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
 {% endblock %}

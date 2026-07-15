@@ -52,11 +52,29 @@ async def home(
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
+    from src.services.media import MediaService
+
+    if user and user.is_admin:
+        access_level = AccessLevel.PREMIUM_2
+    else:
+        access_level = user.access_level if user else AccessLevel.PUBLIC
+
     settings_service = SettingsService(db)
     hero = await settings_service.get_hero_settings()
+    media_service = MediaService(db)
+    recent_images = await media_service.list_all_images(
+        user_access_level=access_level,
+        limit=4,
+    )
     return templates.TemplateResponse(
         "pages/home.html",
-        {"request": request, "title": "Home", "user": user, "hero": hero},
+        {
+            "request": request,
+            "title": "Главная",
+            "user": user,
+            "hero": hero,
+            "recent_images": recent_images,
+        },
     )
 
 
