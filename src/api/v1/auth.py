@@ -1,3 +1,4 @@
+import html
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, Cookie
@@ -217,7 +218,7 @@ async def verify_by_code_only(
     html_response = HTMLResponse(
         content=f"""
         <div class="notice notice-success">
-            Добро пожаловать, {user.display_name}! Перенаправление...
+            Добро пожаловать, {html.escape(user.display_name)}! Перенаправление...
         </div>
         """,
         status_code=200,

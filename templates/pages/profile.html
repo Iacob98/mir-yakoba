@@ -92,7 +92,9 @@
 
     <hr class="divider">
     <div style="text-align: center;">
-        <a href="/api/v1/auth/logout" class="linklike" style="color: var(--err); font-size: 14px;">Выйти из аккаунта</a>
+        <form action="/api/v1/auth/logout" method="POST" hx-boost="false">
+            <button type="submit" class="linklike" style="color: var(--err); font-size: 14px; background: none; border: 0; padding: 0; cursor: pointer;">Выйти из аккаунта</button>
+        </form>
     </div>
 </div>
 {% endblock %}
