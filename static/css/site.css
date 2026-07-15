@@ -276,6 +276,7 @@ h3 { font-size: var(--fs-h3); font-weight: 650; line-height: 1.35; margin: 0; }
   aspect-ratio: 1 / 1; display: grid; place-items: center;
   background: var(--fg-soft);
   font-family: var(--font-display); font-size: 44px; color: var(--faint);
+  font-weight: 700;
 }
 .tile-caption { padding: 12px 14px; }
 .tile-caption h3 { font-size: 15px; line-height: 1.35; }

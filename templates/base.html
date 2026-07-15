@@ -17,6 +17,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="/static/js/site.js" defer></script>
 
+    {# NOTE: with hx-boost, <head> is not re-processed on boosted navigation — put per-page assets in block scripts (body), not here. #}
     {% block head %}{% endblock %}
 </head>
 <body hx-boost="true">
@@ -27,12 +28,12 @@
             <div class="topnav-inner">
                 <a href="/" class="logo">Мир Якоба</a>
                 <nav class="desktop">
-                    <a href="/">Главная</a>
-                    <a href="/gallery">Галерея</a>
-                    <a href="/works">Мои работы</a>
-                    <a href="/search">Поиск</a>
+                    <a href="/" {% if request.url.path == '/' %}aria-current="page"{% endif %}>Главная</a>
+                    <a href="/gallery" {% if request.url.path == '/gallery' %}aria-current="page"{% endif %}>Галерея</a>
+                    <a href="/works" {% if request.url.path == '/works' %}aria-current="page"{% endif %}>Мои работы</a>
+                    <a href="/search" {% if request.url.path == '/search' %}aria-current="page"{% endif %}>Поиск</a>
                     {% if user %}
-                        {% if user.is_admin %}<a href="/admin">Админ</a>{% endif %}
+                        {% if user.is_admin %}<a href="/admin" hx-boost="false">Админ</a>{% endif %}
                         <a href="/profile">{{ user.display_name }}</a>
                         <form action="/api/v1/auth/logout" method="POST" hx-boost="false">
                             <button type="submit" class="logout-btn">Выйти</button>
@@ -41,18 +42,18 @@
                         <a href="/login" class="btn btn-secondary btn-sm">Войти</a>
                     {% endif %}
                 </nav>
-                <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileNav">
+                <button type="button" class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileNav">
                     Меню
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                    <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
                 </button>
             </div>
             <div class="mobile-nav" id="mobileNav">
-                <a href="/">Главная</a>
-                <a href="/gallery">Галерея</a>
-                <a href="/works">Мои работы</a>
-                <a href="/search">Поиск</a>
+                <a href="/" {% if request.url.path == '/' %}aria-current="page"{% endif %}>Главная</a>
+                <a href="/gallery" {% if request.url.path == '/gallery' %}aria-current="page"{% endif %}>Галерея</a>
+                <a href="/works" {% if request.url.path == '/works' %}aria-current="page"{% endif %}>Мои работы</a>
+                <a href="/search" {% if request.url.path == '/search' %}aria-current="page"{% endif %}>Поиск</a>
                 {% if user %}
-                    {% if user.is_admin %}<a href="/admin">Админ</a>{% endif %}
+                    {% if user.is_admin %}<a href="/admin" hx-boost="false">Админ</a>{% endif %}
                     <a href="/profile">{{ user.display_name }}</a>
                     <form action="/api/v1/auth/logout" method="POST" hx-boost="false">
                         <button type="submit" class="logout-btn">Выйти</button>
