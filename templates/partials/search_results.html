@@ -1,39 +1,29 @@
 {% if query %}
     {% if posts %}
-    <p class="text-sm text-gray-400 mb-6">Найдено {{ total }} результат{% if total != 1 %}ов{% endif %}</p>
-    <div class="space-y-6">
+    <p class="meta" style="margin-bottom: 20px;">Найдено: {{ total }}</p>
+    <div>
         {% for post in posts %}
-        <a href="/posts/{{ post.slug }}" class="group block">
-            <article class="flex gap-5 items-start">
-                {% if post.featured_image %}
-                <div class="flex-shrink-0 w-24 h-24 rounded-xl overflow-hidden">
-                    <img src="{{ post.featured_image }}" alt="" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                </div>
-                {% endif %}
-                <div class="flex-1 min-w-0">
-                    <h2 class="font-bold text-lg group-hover:text-gray-600 transition line-clamp-2">{{ post.title }}</h2>
-                    {% if post.excerpt %}
-                    <p class="text-gray-500 text-sm mt-1 line-clamp-2">{{ post.excerpt }}</p>
-                    {% endif %}
-                    <div class="flex items-center gap-3 text-xs text-gray-300 mt-2">
-                        {% if post.published_at %}
-                        <span>{{ post.published_at.strftime('%d.%m.%Y') }}</span>
-                        {% endif %}
-                        <span>{{ post.view_count }} просмотров</span>
-                    </div>
-                </div>
-            </article>
-        </a>
+        <article class="log-row">
+            <span class="meta num">{% if post.published_at %}{{ post.published_at.strftime('%d.%m.%Y') }}{% endif %}</span>
+            <div>
+                <h3><a href="/posts/{{ post.slug }}">{{ post.title }}</a></h3>
+                {% if post.excerpt %}<p class="dek line-clamp-2">{{ post.excerpt }}</p>{% endif %}
+            </div>
+            <span class="pull">
+                {% if post.visibility.value != 'public' %}<span class="tag tag-accent">Для своих</span>{% endif %}
+                <span class="meta num">{{ post.view_count }} просмотров</span>
+            </span>
+        </article>
         {% endfor %}
     </div>
     {% else %}
-    <div class="text-center py-16">
-        <p class="text-gray-400 text-lg mb-2">Ничего не найдено</p>
-        <p class="text-gray-300 text-sm">Попробуйте другие ключевые слова</p>
+    <div class="empty-state">
+        <p>Ничего не найдено</p>
+        <p class="meta">Попробуйте другие ключевые слова</p>
     </div>
     {% endif %}
 {% else %}
-<div class="text-center py-16 text-gray-300">
+<div class="empty-state">
     <p>Введите запрос для поиска</p>
 </div>
 {% endif %}

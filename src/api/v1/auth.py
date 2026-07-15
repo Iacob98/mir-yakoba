@@ -1,3 +1,4 @@
+import html
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, Response, Cookie
@@ -180,10 +181,10 @@ async def verify_by_code_only(
     if not auth_code:
         return HTMLResponse(
             content="""
-            <div class="p-4 bg-red-50 text-red-700 rounded-lg mb-4">
+            <div class="notice notice-error">
                 Неверный или просроченный код. Пожалуйста, получите новый код у бота.
             </div>
-            <a href="/login" class="text-blue-500 hover:underline">Попробовать снова</a>
+            <a href="/login" class="linklike">Попробовать снова</a>
             """,
             status_code=200,
         )
@@ -216,8 +217,8 @@ async def verify_by_code_only(
     # Create response with HX-Redirect header for htmx
     html_response = HTMLResponse(
         content=f"""
-        <div class="p-4 bg-green-50 text-green-700 rounded-lg mb-4">
-            Добро пожаловать, {user.display_name}! Перенаправление...
+        <div class="notice notice-success">
+            Добро пожаловать, {html.escape(user.display_name)}! Перенаправление...
         </div>
         """,
         status_code=200,

@@ -3,76 +3,64 @@
 {% block title %}Профиль{% endblock %}
 
 {% block content %}
-<div class="max-w-sm mx-auto px-6 py-24">
-    <div class="text-center mb-10">
-        <div class="w-20 h-20 rounded-full bg-gray-100 flex items-center justify-center text-2xl font-bold text-gray-400 mx-auto mb-4">
-            {{ user.display_name[0] | upper }}
-        </div>
-        <h1 class="font-serif text-2xl font-bold">{{ user.display_name }}</h1>
-        <p class="text-sm text-gray-400 mt-1">@{{ user.username or 'не указан' }}</p>
+<div class="narrow-col" style="padding-block: 80px;">
+    <div class="profile-head" data-reveal>
+        <div class="ava">{{ user.display_name[0] | upper }}</div>
+        <h1 style="font-size: var(--fs-h2);">{{ user.display_name }}</h1>
+        <p class="meta" style="margin-top: 4px;">@{{ user.username or 'не указан' }}</p>
     </div>
 
     {% if error %}
-    <div class="mb-6 p-4 bg-red-50 text-red-600 rounded-2xl text-sm">
-        {{ error }}
-    </div>
+    <div class="notice notice-error">{{ error }}</div>
     {% endif %}
 
     {% if success %}
-    <div class="mb-6 p-4 bg-green-50 text-green-600 rounded-2xl text-sm">
-        {{ success }}
-    </div>
+    <div class="notice notice-success">{{ success }}</div>
     {% endif %}
 
-    <form method="post" action="/profile/update-nickname" class="space-y-4 mb-8">
-        <div>
-            <label for="display_name" class="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-2">
-                Ваш ник
-            </label>
-            <input type="text"
-                   id="display_name"
-                   name="display_name"
-                   value="{{ user.display_name }}"
-                   maxlength="128"
-                   class="w-full px-5 py-3 bg-gray-50 border-0 rounded-2xl focus:ring-2 focus:ring-gray-900"
-                   required>
-        </div>
-        <button type="submit"
-                class="w-full bg-gray-900 text-white py-3 rounded-full font-medium hover:bg-gray-700 transition">
-            Сохранить
-        </button>
+    <form method="post" action="/profile/update-nickname" data-reveal>
+        <label for="display_name" class="form-label">Ваш ник</label>
+        <input type="text"
+               id="display_name"
+               name="display_name"
+               value="{{ user.display_name }}"
+               maxlength="128"
+               class="field"
+               required>
+        <button type="submit" class="btn btn-primary btn-block" style="margin-top: 12px;">Сохранить</button>
     </form>
 
-    <!-- Level & XP -->
-    <div class="space-y-3 pt-8 border-t border-gray-100">
-        <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-400">Уровень</span>
-            <span class="text-sm font-bold">{{ user.level }}</span>
+    <hr class="divider">
+
+    <div data-reveal>
+        <div class="stat-row">
+            <span class="k">Уровень</span>
+            <span class="num" style="font-weight: 700;">{{ user.level }}</span>
         </div>
-        <div>
-            <div class="flex justify-between text-xs text-gray-400 mb-1">
-                <span>XP: {{ user.xp }}</span>
+        <div style="margin-block: 8px;">
+            <div class="stat-row" style="padding-block: 0 6px;">
+                <span class="k num">XP: {{ user.xp }}</span>
                 {% set thresholds = [0, 15, 40, 75, 125, 200, 300, 425, 575, 750, 1000] %}
                 {% if user.level < thresholds|length - 1 %}
-                <span>{{ thresholds[user.level + 1] }}</span>
+                <span class="k num">{{ thresholds[user.level + 1] }}</span>
                 {% else %}
-                <span>MAX</span>
+                <span class="k">MAX</span>
                 {% endif %}
             </div>
-            <div class="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div class="xp-bar">
                 {% if user.level < thresholds|length - 1 %}
                 {% set current_threshold = thresholds[user.level] %}
                 {% set next_threshold = thresholds[user.level + 1] %}
                 {% set progress = ((user.xp - current_threshold) / (next_threshold - current_threshold) * 100) | int %}
-                <div class="h-full bg-gray-900 rounded-full transition-all" style="width: {{ [progress, 100] | min }}%"></div>
+                <div style="width: {{ [progress, 100] | min }}%"></div>
                 {% else %}
-                <div class="h-full bg-gray-900 rounded-full" style="width: 100%"></div>
+                <div style="width: 100%"></div>
                 {% endif %}
             </div>
         </div>
-        <div class="flex justify-between items-center">
-            <span class="text-sm text-gray-400">Уровень доступа</span>
-            <span class="text-sm font-medium">
+        <div class="stat-row">
+            <span class="k">Уровень доступа</span>
+            <span>
                 {% if user.access_level.name == 'PUBLIC' %}Гость
                 {% elif user.access_level.name == 'REGISTERED' %}Зарегистрированный
                 {% elif user.access_level.name == 'PREMIUM_1' %}Premium
@@ -82,34 +70,31 @@
         </div>
     </div>
 
-    <!-- Achievements -->
     {% if user.achievements %}
-    <div class="pt-8 border-t border-gray-100">
-        <h2 class="text-xs font-medium text-gray-400 uppercase tracking-wider mb-4">Достижения</h2>
-        <div class="space-y-4">
-            {% for ach in user.achievements | sort(attribute='level') %}
-            <div class="flex items-start gap-3">
-                {% if ach.image_path %}
-                <img src="/uploads/{{ ach.image_path }}" alt="{{ ach.title }}" class="w-12 h-12 rounded-xl object-cover flex-shrink-0">
-                {% else %}
-                <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0 text-lg font-bold text-gray-400">
-                    {{ ach.level }}
-                </div>
-                {% endif %}
-                <div>
-                    <p class="text-sm font-medium">{{ ach.title }}</p>
-                    <p class="text-xs text-gray-400">{{ ach.description[:80] }}{% if ach.description|length > 80 %}...{% endif %}</p>
-                </div>
+    <hr class="divider">
+    <div data-reveal>
+        <p class="form-label">Достижения</p>
+        {% for ach in user.achievements | sort(attribute='level') %}
+        <div class="ach-row">
+            {% if ach.image_path %}
+            <img src="/uploads/{{ ach.image_path }}" alt="{{ ach.title }}">
+            {% else %}
+            <div class="ach-ph">{{ ach.level }}</div>
+            {% endif %}
+            <div>
+                <h4>{{ ach.title }}</h4>
+                <p>{{ ach.description[:80] }}{% if ach.description|length > 80 %}…{% endif %}</p>
             </div>
-            {% endfor %}
         </div>
+        {% endfor %}
     </div>
     {% endif %}
 
-    <div class="mt-8 pt-8 border-t border-gray-100 text-center">
-        <a href="/api/v1/auth/logout" class="text-sm text-red-400 hover:text-red-600 transition">
-            Выйти из аккаунта
-        </a>
+    <hr class="divider">
+    <div style="text-align: center;">
+        <form action="/api/v1/auth/logout" method="POST" hx-boost="false">
+            <button type="submit" class="linklike" style="color: var(--err); font-size: 14px; background: none; border: 0; padding: 0; cursor: pointer;">Выйти из аккаунта</button>
+        </form>
     </div>
 </div>
 {% endblock %}

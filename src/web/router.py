@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 
-from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Request
+from fastapi import APIRouter, Cookie, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +10,7 @@ from src.db.session import get_db
 from src.db.models.user import AccessLevel
 from src.db.models.post import PostStatus, PostType, PostVisibility
 from src.services.auth import AuthService
+from src.services.media import MediaService
 from src.services.notification import notify_post_published
 from src.services.post import PostService
 from src.services.settings import SettingsService
@@ -52,11 +53,27 @@ async def home(
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
+    if user and user.is_admin:
+        access_level = AccessLevel.PREMIUM_2
+    else:
+        access_level = user.access_level if user else AccessLevel.PUBLIC
+
     settings_service = SettingsService(db)
     hero = await settings_service.get_hero_settings()
+    media_service = MediaService(db)
+    recent_images = await media_service.list_all_images(
+        user_access_level=access_level,
+        limit=4,
+    )
     return templates.TemplateResponse(
         "pages/home.html",
-        {"request": request, "title": "Home", "user": user, "hero": hero},
+        {
+            "request": request,
+            "title": "Главная",
+            "user": user,
+            "hero": hero,
+            "recent_images": recent_images,
+        },
     )
 
 
@@ -67,8 +84,6 @@ async def gallery_page(
     db: AsyncSession = Depends(get_db),
 ):
     """Gallery page showing all images from all published posts."""
-    from src.services.media import MediaService
-
     if user and user.is_admin:
         access_level = AccessLevel.PREMIUM_2
     else:
@@ -157,7 +172,7 @@ async def update_nickname(
 @web_router.get("/partials/posts", response_class=HTMLResponse)
 async def posts_partial(
     request: Request,
-    page: int = 1,
+    page: int = Query(1, ge=1),
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
@@ -173,7 +188,6 @@ async def posts_partial(
         user_access_level=access_level,
         page=page,
         per_page=10,
-        post_type=PostType.ARTICLE,
     )
 
     has_more = (page * 10) < total
@@ -526,7 +540,7 @@ async def admin_save_settings(
 @web_router.get("/admin/users", response_class=HTMLResponse)
 async def admin_users_list(
     request: Request,
-    page: int = 1,
+    page: int = Query(1, ge=1),
     search: str = "",
     user=Depends(require_admin),
     db: AsyncSession = Depends(get_db),
@@ -730,7 +744,7 @@ async def post_detail(
 async def search_page(
     request: Request,
     q: str = "",
-    page: int = 1,
+    page: int = Query(1, ge=1),
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
@@ -773,7 +787,7 @@ async def search_page(
 async def search_results_partial(
     request: Request,
     q: str = "",
-    page: int = 1,
+    page: int = Query(1, ge=1),
     user=Depends(get_current_user_optional),
     db: AsyncSession = Depends(get_db),
 ):
