@@ -3,73 +3,41 @@
 {% block title %}Мои работы{% endblock %}
 
 {% block content %}
-<section class="max-w-6xl mx-auto px-6 py-16">
-    <div class="text-center mb-16">
-        <p class="text-sm font-medium text-gray-400 uppercase tracking-widest mb-3">Портфолио</p>
-        <h1 class="font-serif text-4xl sm:text-5xl font-bold mb-4">Мои работы</h1>
-        <p class="text-gray-500 max-w-md mx-auto">Фото, видео и документы из моего портфолио</p>
-    </div>
+<section class="section" style="border-top: 0;">
+    <div class="container">
+        <div class="section-head" data-reveal>
+            <p class="kicker">Портфолио</p>
+            <h1 style="font-size: var(--fs-h2);">Мои работы</h1>
+            <p class="dek" style="margin-top: 8px;">Фото, видео и документы из моего портфолио</p>
+        </div>
 
-    {% if posts %}
-    <div class="masonry">
-        {% for post in posts %}
-        <a href="/posts/{{ post.slug }}" class="group block mb-4">
-            <div class="relative overflow-hidden rounded-2xl bg-gray-100">
+        {% if posts %}
+        <div class="masonry">
+            {% for post in posts %}
+            <a href="/posts/{{ post.slug }}" class="tile" data-reveal>
                 {% if post.featured_image %}
-                <img src="{{ post.featured_image }}"
-                     alt="{{ post.title }}"
-                     class="w-full object-cover group-hover:scale-105 transition duration-500"
-                     loading="lazy">
+                <img src="{{ post.featured_image }}" alt="{{ post.title }}" loading="lazy">
                 {% else %}
-                {# Check for video or document media #}
-                {% set has_video = post.media | selectattr('media_type.value', 'equalto', 'video') | list %}
-                {% set has_doc = post.media | selectattr('media_type.value', 'equalto', 'document') | list %}
-                {% if has_video %}
-                {% set emojis = ['🎬','📹','🎥','🎞','📽'] %}
-                {% elif has_doc %}
-                {% set emojis = ['📄','📑','📋','📃','📝'] %}
-                {% else %}
-                {% set emojis = ['🎨','🖼','🖌','✏️','🎭','🌈','💎','🪷','🦋','✨'] %}
+                <div class="tile-ph">{{ post.title[0] | upper }}</div>
                 {% endif %}
-                {% set bg_colors = ['from-violet-100 to-pink-50','from-sky-100 to-cyan-50','from-amber-100 to-yellow-50','from-emerald-100 to-green-50','from-rose-100 to-red-50'] %}
-                {% set idx = range(emojis|length) | random %}
-                {% set bg_idx = range(bg_colors|length) | random %}
-                <div class="aspect-square flex items-center justify-center bg-gradient-to-br {{ bg_colors[bg_idx] }}">
-                    <span class="text-6xl">{{ emojis[idx] }}</span>
-                </div>
-                {% endif %}
-                <!-- Overlay on hover -->
-                <div class="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition duration-300 flex items-end">
-                    <div class="p-5 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition duration-300">
-                        <h3 class="text-white font-bold text-lg leading-tight">{{ post.title }}</h3>
-                        {% if post.excerpt %}
-                        <p class="text-white/70 text-sm mt-1 line-clamp-2">{{ post.excerpt }}</p>
-                        {% endif %}
-                        {# Show media type badges #}
-                        <div class="flex gap-1 mt-2">
-                            {% for m in post.media %}
-                            {% if m.media_type.value == 'video' %}
-                            <span class="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">Video</span>
-                            {% elif m.media_type.value == 'document' %}
-                            <span class="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">PDF</span>
-                            {% endif %}
-                            {% endfor %}
-                        </div>
+                <div class="tile-caption">
+                    <h3>{{ post.title }}</h3>
+                    <div class="meta">
+                        {% if post.published_at %}<span class="num">{{ post.published_at.strftime('%d.%m.%Y') }}</span>{% endif %}
+                        {% for m in post.media %}
+                            {% if m.media_type.value == 'video' %}<span class="tag">Видео</span>
+                            {% elif m.media_type.value == 'document' %}<span class="tag">PDF</span>{% endif %}
+                        {% endfor %}
                     </div>
                 </div>
-            </div>
-        </a>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="text-center py-20">
-        <div class="w-20 h-20 mx-auto mb-6 rounded-full bg-gray-50 flex items-center justify-center">
-            <svg class="w-8 h-8 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-            </svg>
+            </a>
+            {% endfor %}
         </div>
-        <p class="text-gray-400 text-lg">Работы скоро появятся</p>
+        {% else %}
+        <div class="empty-state">
+            <p>Работы скоро появятся</p>
+        </div>
+        {% endif %}
     </div>
-    {% endif %}
 </section>
 {% endblock %}
