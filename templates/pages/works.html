@@ -24,10 +24,8 @@
                     <h3>{{ post.title }}</h3>
                     <div class="meta">
                         {% if post.published_at %}<span class="num">{{ post.published_at.strftime('%d.%m.%Y') }}</span>{% endif %}
-                        {% for m in post.media %}
-                            {% if m.media_type.value == 'video' %}<span class="tag">Видео</span>
-                            {% elif m.media_type.value == 'document' %}<span class="tag">PDF</span>{% endif %}
-                        {% endfor %}
+                        {% if post.media | selectattr('media_type.value', 'equalto', 'video') | list %}<span class="tag">Видео</span>{% endif %}
+                        {% if post.media | selectattr('media_type.value', 'equalto', 'document') | list %}<span class="tag">PDF</span>{% endif %}
                     </div>
                 </div>
             </a>
