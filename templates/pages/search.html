@@ -45,7 +45,7 @@
 
                 {% if has_more %}
                 <div style="text-align: center; margin-top: 32px;">
-                    <a href="/search?q={{ query }}&page={{ page + 1 }}" class="btn btn-secondary">Загрузить ещё</a>
+                    <a href="/search?q={{ query | urlencode }}&page={{ page + 1 }}" class="btn btn-secondary">Загрузить ещё</a>
                 </div>
                 {% endif %}
                 {% else %}
