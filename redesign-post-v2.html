@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Уровни, XP и достижения — Мир Якоба</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── tokens: тёмный уютный вечер ────────────────────────────────── */
+    :root {
+      --bg:      oklch(21% 0.016 60);
+      --surface: oklch(25% 0.018 60);
+      --fg:      oklch(93% 0.014 80);
+      --muted:   oklch(69% 0.022 70);
+      --border:  color-mix(in oklch, white 12%, transparent);
+      --accent:  oklch(79% 0.135 75);
+
+      --accent-soft: color-mix(in oklch, var(--accent) 16%, transparent);
+      --fg-soft:     color-mix(in oklch, white 7%, transparent);
+
+      --font-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --fs-h1: clamp(26px, 4.6vw, 44px);
+      --fs-h2: clamp(20px, 3vw, 28px);
+      --fs-lead: 18px;
+      --fs-body: 17px;
+      --fs-meta: 13px;
+
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --container: 1080px;
+      --article: 700px;
+      --gutter: 24px;
+
+      --radius: 10px;
+      --radius-lg: 16px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--fs-body);
+      line-height: 1.7;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    p { text-wrap: pretty; }
+    h1, h2, h3 { text-wrap: balance; }
+
+    /* ─── a11y ──────────────────────────────────────────────────────── */
+    .skip-link {
+      position: absolute; left: -9999px; top: 0; z-index: 30;
+      background: var(--fg); color: var(--bg);
+      padding: 12px 20px; font-size: 14px; font-weight: 600;
+      border-radius: 0 0 var(--radius) 0;
+    }
+    .skip-link:focus-visible { left: 0; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    ::selection { background: var(--accent-soft); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+      .btn:active { transform: none; }
+    }
+
+    .container { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
+    .article-col { max-width: var(--article); margin-inline: auto; padding-inline: var(--gutter); }
+    .row { display: flex; align-items: center; gap: var(--gap-md); }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
+
+    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+    .kicker {
+      font-family: var(--font-mono);
+      font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 var(--gap-md);
+    }
+
+    /* ─── reading progress (янтарная нить) ──────────────────────────── */
+    .progress { position: fixed; top: 0; left: 0; height: 3px; width: 0; background: var(--accent); z-index: 20; }
+
+    /* ─── nav ───────────────────────────────────────────────────────── */
+    .topnav {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in oklch, var(--bg) 88%, transparent);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; gap: var(--gap-md); }
+    .topnav .logo { font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+    .topnav nav { display: flex; gap: var(--gap-lg); align-items: center; }
+    .topnav nav a { font-size: 14px; color: var(--muted); padding-block: 10px; }
+    .topnav nav a:hover { color: var(--fg); }
+    .nav-toggle { display: none; background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; color: var(--fg); min-height: 44px; align-items: center; gap: 8px; }
+    .mobile-nav { display: none; border-top: 1px solid var(--border); padding-block: var(--gap-sm) var(--gap-md); }
+    .mobile-nav a { display: block; padding: 12px 0; font-size: 16px; color: var(--fg); border-bottom: 1px solid var(--border); min-height: 44px; }
+    .mobile-nav.open { display: block; }
+    @media (max-width: 920px) {
+      .topnav nav { display: none; }
+      .nav-toggle { display: inline-flex; }
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 22px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      font-size: 15px; font-weight: 600; min-height: 44px;
+      transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+      font-family: var(--font-body);
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--fg) 88%, black); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+
+    .tag {
+      display: inline-flex; align-items: center;
+      padding: 4px 11px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    }
+
+    .ph-img {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      aspect-ratio: 16 / 9;
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 12px; letter-spacing: 0.06em;
+    }
+
+    /* ─── article header ────────────────────────────────────────────── */
+    .article-head { padding-block: clamp(40px, 7vw, 80px) clamp(24px, 4vw, 44px); }
+    .article-head h1 { font-family: var(--font-display); font-size: var(--fs-h1); line-height: 1.16; letter-spacing: -0.005em; margin: 0 0 var(--gap-md); font-weight: 600; }
+    .article-head .dek { font-size: var(--fs-lead); color: var(--muted); max-width: 56ch; margin: 0; line-height: 1.6; }
+    .byline { display: flex; align-items: center; gap: 14px; margin-top: var(--gap-lg); padding-top: var(--gap-md); border-top: 1px solid var(--border); }
+    .byline img { width: 44px; height: 44px; object-fit: cover; border-radius: 999px; border: 1px solid var(--border); }
+    .byline .who { font-size: 14px; font-weight: 650; }
+    .byline .when { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .cover { margin: 0 0 clamp(24px, 4.5vw, 48px); }
+    .cover figcaption { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+    /* ─── article body ──────────────────────────────────────────────── */
+    .article-body { padding-bottom: clamp(36px, 5.5vw, 64px); }
+    .article-body p { margin: 0 0 1.35em; }
+    .article-body h2 {
+      font-family: var(--font-display);
+      font-size: var(--fs-h2); line-height: 1.25;
+      margin: 1.9em 0 0.7em; font-weight: 600;
+    }
+    .article-body ul { padding-left: 1.2em; margin: 0 0 1.35em; }
+    .article-body li { margin-bottom: 0.4em; }
+    .article-body blockquote {
+      font-size: clamp(19px, 2.2vw, 23px); line-height: 1.5; font-weight: 550;
+      margin: 1.6em 0; padding: 4px 0 4px 22px;
+      border-left: 3px solid var(--accent);
+    }
+    .article-body code {
+      font-family: var(--font-mono); font-size: 0.85em;
+      background: var(--fg-soft); padding: 2px 6px; border-radius: 6px;
+    }
+    .article-body pre {
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+      padding: 18px 20px; overflow-x: auto; margin: 0 0 1.35em;
+      font-family: var(--font-mono); font-size: 13.5px; line-height: 1.6;
+    }
+    .article-body pre code { background: none; padding: 0; }
+    .article-body a { text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--muted); }
+    .article-body a:hover { text-decoration-color: var(--fg); }
+
+    /* ─── article footer: tags + prev/next ──────────────────────────── */
+    .article-foot { border-top: 1px solid var(--border); padding-block: var(--gap-lg); }
+    .post-nav { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap-md); margin-top: var(--gap-lg); }
+    .post-nav a {
+      display: block; padding: 18px 20px;
+      background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg);
+    }
+    .post-nav a:hover { border-color: var(--fg); }
+    .post-nav .dir { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+    .post-nav h3 { font-size: 15px; line-height: 1.4; margin: 8px 0 0; font-weight: 650; }
+    .post-nav .next { text-align: right; }
+    @media (max-width: 640px) { .post-nav { grid-template-columns: 1fr; } .post-nav .next { text-align: left; } }
+
+    /* ─── comments ──────────────────────────────────────────────────── */
+    .comments { border-top: 1px solid var(--border); padding-block: var(--gap-xl); }
+    .comments h2 { font-family: var(--font-display); font-size: var(--fs-h2); margin: 0 0 var(--gap-lg); font-weight: 600; }
+    .comment-form textarea {
+      width: 100%; min-height: 96px; resize: vertical;
+      padding: 14px 16px;
+      border: 1px solid var(--border); border-radius: var(--radius);
+      background: var(--surface); color: var(--fg);
+      font: inherit; font-size: 15px; line-height: 1.55;
+    }
+    .comment-form textarea:focus { outline: 2px solid var(--accent-soft); border-color: var(--accent); }
+    .form-hint { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+    .form-error { font-size: 13px; color: var(--accent); display: none; margin-top: 6px; }
+    .comment { display: grid; grid-template-columns: 40px 1fr; gap: 14px; padding: 20px 0; border-top: 1px solid var(--border); }
+    .comment .ava {
+      width: 40px; height: 40px; border-radius: 999px;
+      display: grid; place-items: center;
+      background: var(--fg-soft); border: 1px solid var(--border);
+      font-weight: 700; font-size: 15px;
+    }
+    .comment .head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .comment .name { font-size: 14px; font-weight: 650; }
+    .comment p { margin: 6px 0 0; font-size: 15px; }
+
+    .pagefoot { padding-block: var(--gap-xl); color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    .pagefoot .row-between { flex-wrap: wrap; gap: var(--gap-md); }
+    .pagefoot a { display: inline-block; padding-block: 6px; }
+    .pagefoot a:hover { color: var(--fg); }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Перейти к содержанию</a>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+
+  <header class="topnav" data-od-id="topnav">
+    <div class="container">
+      <div class="topnav-inner">
+        <a href="redesign-home-v2.html" class="logo" data-od-id="logo">Мир Якоба</a>
+        <nav data-od-id="nav-desktop">
+          <a href="redesign-home-v2.html">Главная</a>
+          <a href="redesign-home-v2.html#gallery">Галерея</a>
+          <a href="redesign-home-v2.html#author">Мои работы</a>
+          <a href="redesign-home-v2.html#posts">Поиск</a>
+          <a href="redesign-home-v2.html#author" class="btn btn-secondary" style="min-height:40px; padding: 8px 16px;" data-od-id="nav-login">Войти</a>
+        </nav>
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileNav" data-od-id="nav-toggle">
+          Меню
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+      <div class="mobile-nav" id="mobileNav" data-od-id="nav-mobile">
+        <a href="redesign-home-v2.html">Главная</a>
+        <a href="redesign-home-v2.html#gallery">Галерея</a>
+        <a href="redesign-home-v2.html#author">Мои работы</a>
+        <a href="redesign-home-v2.html#posts">Поиск</a>
+        <a href="redesign-home-v2.html#author" style="border-bottom:0; font-weight:600;">Войти</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="content">
+    <article>
+      <header class="article-col article-head" data-od-id="article-head">
+        <p class="kicker">Новости блога · 7 мин чтения</p>
+        <h1 data-od-id="article-title">Уровни, XP и достижения: зачем блогу игровая механика</h1>
+        <p class="dek" data-od-id="article-dek">Читатели получают опыт за комментарии и время на сайте, а бот присылает карточки достижений прямо в Telegram. Как это устроено и почему я вдвое снизил пороги уровней.</p>
+        <div class="byline" data-od-id="article-byline">
+          <img src="static/avatar.jpg" alt="Якоб" />
+          <div>
+            <div class="who">Якоб</div>
+            <div class="when num">12 июля 2026 · 214 просмотров</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="article-col">
+        <figure class="cover" data-od-id="article-cover">
+          <div class="ph-img" aria-label="Обложка статьи">[ Обложка · карточка достижения из бота ]</div>
+          <figcaption>Такую карточку бот отправляет читателю при новом достижении</figcaption>
+        </figure>
+      </div>
+
+      <div class="article-col article-body" data-od-id="article-body">
+        <p>Полгода назад комментарии в блоге писали три человека, и всех троих я знал лично. Хотелось простого: чтобы возвращаться сюда было чуть интереснее, чем в закладку «прочитать позже». Так в блоге появились уровни, опыт и достижения: та самая игровая механика, которую обычно встречаешь в языковых приложениях, а не в персональных дневниках.</p>
+
+        <p>Принцип нарочно примитивный. Читатель получает опыт за действия, которые мне и так дороги: оставил комментарий, дочитал длинный текст, вернулся на следующий день. Накопленный опыт переводит его на новый уровень, а отдельные поступки открывают достижения — и о каждом бот сообщает лично, в Telegram.</p>
+
+        <h2>Почему Telegram, а не почта</h2>
+        <p>Вся авторизация в блоге и так живёт в Telegram: вместо пароля читатель получает от бота код входа. Логично было и награды доставлять туда же, в канал, который человек открывает десять раз в день, а не в почтовый ящик, где письмо утонет между рассылками.</p>
+
+        <blockquote data-od-id="article-quote">Награда работает, только если приходит туда, где человек уже живёт.</blockquote>
+
+        <p>Технически это один сервис уведомлений: он собирает событие, рисует карточку достижения и отправляет её ботом. Карточка сохраняется как обычная картинка, поэтому выглядит одинаково у всех и не зависит от клиента.</p>
+
+        <h2>Пороги уровней: первая ошибка</h2>
+        <p>Первую таблицу порогов я выдумал «на глаз» и промахнулся вдвое. До второго уровня читатель добирался неделями, интерес гас раньше. Пришлось признать очевидное:</p>
+        <ul>
+          <li>первый уровень должен случаться в первый же визит;</li>
+          <li>второй — в течение недели обычного чтения;</li>
+          <li>дальше кривая может расти сколь угодно круто.</li>
+        </ul>
+        <p>После пересчёта порогов пришлось задним числом пересчитать и опыт всех читателей — для этого есть отдельный скрипт, который заодно генерирует пропущенные достижения и рассылает уведомления:</p>
+        <pre><code>docker compose exec app python scripts/recalc_xp.py</code></pre>
+
+        <h2>Что дальше</h2>
+        <p>Сейчас у читателя есть команда <code>/level</code> в боте: она показывает уровень, опыт и следующую цель. Следующий шаг — страница профиля на сайте с той же информацией и лентой последних достижений. Если у вас есть мысли, какие поступки читателя стоит награждать, расскажите в комментариях.</p>
+      </div>
+
+      <footer class="article-col article-foot" data-od-id="article-foot">
+        <div class="row" style="flex-wrap: wrap; gap: 10px;">
+          <span class="tag">Новости блога</span>
+          <span class="tag">Telegram</span>
+          <span class="tag">Механики</span>
+        </div>
+        <nav class="post-nav" data-od-id="post-nav" aria-label="Соседние записи">
+          <a href="redesign-home-v2.html#posts" data-od-id="post-nav-prev">
+            <span class="dir">← Предыдущая</span>
+            <h3>Июньский скетчбук: развороты и поля</h3>
+          </a>
+          <a href="redesign-home-v2.html#posts" class="next" data-od-id="post-nav-next">
+            <span class="dir">Следующая →</span>
+            <h3>О медленном чтении</h3>
+          </a>
+        </nav>
+      </footer>
+
+      <section class="article-col comments" data-od-id="comments">
+        <h2>Комментарии <span class="num" id="commentCount" style="color: var(--muted); font-size: 0.6em;">· 2</span></h2>
+
+        <form class="comment-form" id="commentForm" data-od-id="comment-form">
+          <textarea id="commentText" placeholder="Написать комментарий…" aria-label="Текст комментария" aria-describedby="commentError"></textarea>
+          <p class="form-error" id="commentError" role="alert">Комментарий должен быть не короче трёх символов.</p>
+          <div class="row-between" style="margin-top: 12px; flex-wrap: wrap;">
+            <span class="form-hint">Вы вошли как Якоб · +5 XP за комментарий</span>
+            <button type="submit" class="btn btn-primary" id="commentSubmit" data-od-id="comment-submit">Отправить</button>
+          </div>
+        </form>
+
+        <div id="commentsList" style="margin-top: 32px;" data-od-id="comments-list">
+          <div class="comment" data-od-id="comment-1">
+            <div class="ava">М</div>
+            <div>
+              <div class="head"><span class="name">Мария</span><span class="meta">11.07.2026</span></div>
+              <p>Пороги и правда стали человечнее: второй уровень открылся за два вечера чтения. Карточка в телеграме выглядит отлично.</p>
+            </div>
+          </div>
+          <div class="comment" data-od-id="comment-2">
+            <div class="ava">Д</div>
+            <div>
+              <div class="head"><span class="name">Дима</span><span class="meta">12.07.2026</span></div>
+              <p>Предлагаю достижение за первый комментарий под записью из раздела «Фото»: рисующих читателей надо поощрять отдельно.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </article>
+  </main>
+
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container">
+      <div class="row-between">
+        <div>
+          <span style="font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--fg);">Мир Якоба</span>
+          <p style="margin: 6px 0 0;">Творчество, мысли и код</p>
+        </div>
+        <nav class="row" style="gap: 24px; flex-wrap: wrap;">
+          <a href="redesign-home-v2.html">Главная</a>
+          <a href="redesign-home-v2.html#gallery">Галерея</a>
+          <a href="redesign-home-v2.html#author">Мои работы</a>
+          <a href="redesign-home-v2.html#posts">Поиск</a>
+        </nav>
+      </div>
+      <p class="meta" style="margin-top: 32px;">© 2026 Мир Якоба · вход по коду из Telegram, без паролей</p>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu
+    (function () {
+      var toggle = document.getElementById('navToggle');
+      var menu = document.getElementById('mobileNav');
+      toggle.addEventListener('click', function () {
+        var open = menu.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+    })();
+
+    // Reading progress
+    (function () {
+      var bar = document.getElementById('progress');
+      function update() {
+        var doc = document.documentElement;
+        var max = doc.scrollHeight - window.innerHeight;
+        var ratio = max > 0 ? Math.min(1, window.scrollY / max) : 0;
+        bar.style.width = (ratio * 100) + '%';
+      }
+      window.addEventListener('scroll', update, { passive: true });
+      window.addEventListener('resize', update);
+      update();
+    })();
+
+    // Comment form: validation + optimistic append
+    (function () {
+      var form = document.getElementById('commentForm');
+      var textarea = document.getElementById('commentText');
+      var error = document.getElementById('commentError');
+      var submit = document.getElementById('commentSubmit');
+      var list = document.getElementById('commentsList');
+      var counter = document.getElementById('commentCount');
+      var count = 2;
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var text = textarea.value.trim();
+        if (text.length < 3) {
+          error.style.display = 'block';
+          textarea.setAttribute('aria-invalid', 'true');
+          textarea.focus();
+          return;
+        }
+        error.style.display = 'none';
+        textarea.removeAttribute('aria-invalid');
+        submit.disabled = true;
+        submit.textContent = 'Отправка…';
+
+        setTimeout(function () {
+          var item = document.createElement('div');
+          item.className = 'comment';
+          var ava = document.createElement('div');
+          ava.className = 'ava';
+          ava.textContent = 'Я';
+          var body = document.createElement('div');
+          var head = document.createElement('div');
+          head.className = 'head';
+          var name = document.createElement('span');
+          name.className = 'name';
+          name.textContent = 'Якоб';
+          var when = document.createElement('span');
+          when.className = 'meta';
+          when.textContent = 'только что';
+          head.appendChild(name);
+          head.appendChild(when);
+          var p = document.createElement('p');
+          p.textContent = text;
+          body.appendChild(head);
+          body.appendChild(p);
+          item.appendChild(ava);
+          item.appendChild(body);
+          list.insertBefore(item, list.firstChild);
+
+          count += 1;
+          counter.textContent = '· ' + count;
+          textarea.value = '';
+          submit.disabled = false;
+          submit.textContent = 'Отправить';
+        }, 400);
+      });
+
+      textarea.addEventListener('input', function () {
+        if (textarea.value.trim().length >= 3) {
+          error.style.display = 'none';
+          textarea.removeAttribute('aria-invalid');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

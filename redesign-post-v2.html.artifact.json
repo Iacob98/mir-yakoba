@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "redesign-post-v2.html",
+  "entry": "redesign-post-v2.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-07-14T13:49:34.724Z",
+  "updatedAt": "2026-07-14T13:49:34.724Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

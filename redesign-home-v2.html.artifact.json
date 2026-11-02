@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "kind": "html",
+  "title": "redesign-home-v2.html",
+  "entry": "redesign-home-v2.html",
+  "renderer": "html",
+  "status": "complete",
+  "exports": [
+    "html",
+    "pdf",
+    "zip"
+  ],
+  "createdAt": "2026-07-14T13:50:04.116Z",
+  "updatedAt": "2026-07-14T13:50:04.116Z",
+  "metadata": {
+    "inferred": true,
+    "reconciled": true
+  }
+}

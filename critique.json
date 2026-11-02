@@ -1,0 +1,11 @@
+{
+  "kind": "critique-panel",
+  "score": 4,
+  "axes": {
+    "clarity": { "score": 4, "notes": "Dark evening system reads immediately: glow hero → pinned card → three-structure feed → gallery → author/login. Old warm files kept for comparison." },
+    "hierarchy": { "score": 4, "notes": "Unbounded display carries the page; one raised surface card (pinned post) dominates above the flat feed rows." },
+    "typography": { "score": 4, "notes": "Serifs fully removed per user feedback; Unbounded (native Cyrillic, characterful) for display, system sans body at 17px/1.7 on the post page; tracking rules kept." },
+    "motion": { "score": 4, "notes": "Single flourish: static amber lamp-glow radial in the hero (brief-mandated «вечерняя лампа»); amber reading-progress thread on the post; reduced-motion intact." },
+    "brand": { "score": 4, "notes": "Warm charcoal (not pure black), amber accent used twice per screen (pinned kicker + login CTA; progress + blockquote rule), no purple, no glows beyond the one hero light." }
+  }
+}

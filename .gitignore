@@ -44,3 +44,10 @@ htmlcov/
 # Docker
 docker-compose.override.yml
 .superpowers/
+.env.*
+!.env.example
+node_modules/
+.claude/
+*token*.json
+client_secret*.json
+*.pem

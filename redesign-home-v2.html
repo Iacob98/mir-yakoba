@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Мир Якоба — творчество, мысли и код</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    /* ─── tokens: тёмный уютный вечер ────────────────────────────────── */
+    :root {
+      --bg:      oklch(21% 0.016 60);
+      --surface: oklch(25% 0.018 60);
+      --fg:      oklch(93% 0.014 80);
+      --muted:   oklch(69% 0.022 70);
+      --border:  color-mix(in oklch, white 12%, transparent);
+      --accent:  oklch(79% 0.135 75);
+
+      --accent-soft: color-mix(in oklch, var(--accent) 16%, transparent);
+      --fg-soft:     color-mix(in oklch, white 7%, transparent);
+
+      --font-display: 'Unbounded', 'Arial Black', system-ui, sans-serif;
+      --font-body:    -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      --font-mono:    ui-monospace, 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+
+      --fs-h1: clamp(30px, 5.4vw, 54px);
+      --fs-h2: clamp(22px, 3.4vw, 32px);
+      --fs-h3: 19px;
+      --fs-lead: 18px;
+      --fs-body: 16px;
+      --fs-meta: 13px;
+
+      --gap-sm: 12px;
+      --gap-md: 20px;
+      --gap-lg: 32px;
+      --gap-xl: 56px;
+      --gap-2xl: 88px;
+      --container: 1080px;
+      --gutter: 24px;
+
+      --radius: 10px;
+      --radius-lg: 16px;
+    }
+
+    /* ─── reset & base ──────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-body);
+      font-size: var(--fs-body);
+      line-height: 1.6;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    img, svg { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; cursor: pointer; }
+    p { text-wrap: pretty; }
+    h1, h2, h3 { text-wrap: balance; }
+
+    /* ─── a11y: skip link + focus + selection + reduced motion ─────── */
+    .skip-link {
+      position: absolute; left: -9999px; top: 0; z-index: 30;
+      background: var(--fg); color: var(--bg);
+      padding: 12px 20px; font-size: 14px; font-weight: 600;
+      border-radius: 0 0 var(--radius) 0;
+    }
+    .skip-link:focus-visible { left: 0; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    ::selection { background: var(--accent-soft); }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; }
+      .btn:active { transform: none; }
+    }
+
+    /* ─── layout primitives ─────────────────────────────────────────── */
+    .container { max-width: var(--container); margin-inline: auto; padding-inline: var(--gutter); }
+    .section { padding-block: clamp(40px, 6.5vw, var(--gap-2xl)); }
+    .section + .section { border-top: 1px solid var(--border); }
+    .row { display: flex; align-items: center; gap: var(--gap-md); }
+    .row-between { display: flex; align-items: center; justify-content: space-between; gap: var(--gap-md); }
+    .grid-1-2 { display: grid; grid-template-columns: 1fr 2fr; gap: var(--gap-xl); align-items: center; }
+    @media (max-width: 920px) { .grid-1-2 { grid-template-columns: 1fr; gap: var(--gap-lg); } }
+
+    /* ─── type ──────────────────────────────────────────────────────── */
+    h1 { font-family: var(--font-display); font-size: var(--fs-h1); line-height: 1.12; letter-spacing: -0.01em; margin: 0; font-weight: 600; }
+    h2 { font-family: var(--font-display); font-size: var(--fs-h2); line-height: 1.18; letter-spacing: -0.005em; margin: 0; font-weight: 600; }
+    h3 { font-size: var(--fs-h3); font-weight: 650; line-height: 1.35; margin: 0; }
+    .lead { font-size: var(--fs-lead); line-height: 1.6; color: var(--muted); max-width: 58ch; margin: 0; }
+    .kicker {
+      font-family: var(--font-mono);
+      font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase;
+      color: var(--muted); margin: 0 0 var(--gap-md);
+    }
+    .kicker-accent { color: var(--accent); }
+    .meta { font-family: var(--font-mono); font-size: var(--fs-meta); color: var(--muted); }
+    .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+    /* ─── chrome: nav + footer ──────────────────────────────────────── */
+    .topnav {
+      position: sticky; top: 0; z-index: 10;
+      background: color-mix(in oklch, var(--bg) 88%, transparent);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .topnav-inner { display: flex; align-items: center; justify-content: space-between; padding-block: 14px; gap: var(--gap-md); }
+    .topnav .logo { font-family: var(--font-display); font-size: 15px; font-weight: 700; letter-spacing: 0.01em; }
+    .topnav nav { display: flex; gap: var(--gap-lg); align-items: center; }
+    .topnav nav a { font-size: 14px; color: var(--muted); padding-block: 10px; }
+    .topnav nav a:hover, .topnav nav a[aria-current="page"] { color: var(--fg); }
+    .nav-toggle { display: none; background: none; border: 1px solid var(--border); border-radius: var(--radius); padding: 8px 12px; color: var(--fg); min-height: 44px; align-items: center; gap: 8px; }
+    .mobile-nav { display: none; border-top: 1px solid var(--border); padding-block: var(--gap-sm) var(--gap-md); }
+    .mobile-nav a { display: block; padding: 12px 0; font-size: 16px; color: var(--fg); border-bottom: 1px solid var(--border); min-height: 44px; }
+    .mobile-nav.open { display: block; }
+    @media (max-width: 920px) {
+      .topnav nav { display: none; }
+      .nav-toggle { display: inline-flex; }
+    }
+    .pagefoot { padding-block: var(--gap-xl); color: var(--muted); font-size: 13px; border-top: 1px solid var(--border); }
+    .pagefoot .row-between { flex-wrap: wrap; gap: var(--gap-md); }
+    .pagefoot a { display: inline-block; padding-block: 6px; }
+    .pagefoot a:hover { color: var(--fg); }
+
+    /* ─── buttons ───────────────────────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 22px;
+      border-radius: var(--radius);
+      border: 1px solid transparent;
+      font-size: 15px; font-weight: 600; min-height: 44px;
+      transition: transform 0.05s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    }
+    .btn:active { transform: translateY(1px); }
+    .btn-primary { background: var(--accent); color: var(--bg); border-color: var(--accent); }
+    .btn-primary:hover { background: color-mix(in oklch, var(--accent) 85%, white); }
+    .btn-secondary { background: transparent; color: var(--fg); border-color: var(--border); }
+    .btn-secondary:hover { border-color: var(--fg); }
+    .btn-ghost { background: transparent; color: var(--fg); border-color: transparent; padding-inline: 8px; }
+    .btn-ghost:hover { color: var(--accent); }
+    .btn-arrow::after { content: '→'; transition: transform 0.15s ease; }
+    .btn-arrow:hover::after { transform: translateX(2px); }
+
+    /* ─── tags ──────────────────────────────────────────────────────── */
+    .tag {
+      display: inline-flex; align-items: center;
+      padding: 4px 11px;
+      color: var(--muted);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    /* ─── image placeholder ─────────────────────────────────────────── */
+    .ph-img {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      aspect-ratio: 16 / 10;
+      display: grid; place-items: center;
+      color: var(--muted);
+      font-family: var(--font-mono);
+      font-size: 12px; letter-spacing: 0.06em;
+    }
+    .ph-img.square { aspect-ratio: 1 / 1; }
+
+    /* ─── hero: вечерняя лампа (единственный флориш) ────────────────── */
+    .hero { position: relative; padding-block: clamp(56px, 9vw, 120px) clamp(40px, 6vw, 72px); overflow: hidden; }
+    .hero::before {
+      content: "";
+      position: absolute; inset: -40% -20% auto -20%; height: 130%;
+      background: radial-gradient(ellipse 55% 60% at 50% 0%, var(--accent-soft), transparent 70%);
+      pointer-events: none;
+    }
+    .hero-inner { position: relative; max-width: 640px; }
+    .hero .lead { margin-top: 18px; }
+    .hero-avatar { width: 64px; height: 64px; border-radius: 999px; object-fit: cover; border: 1px solid var(--border); margin-bottom: 22px; }
+
+    /* ─── pinned card ───────────────────────────────────────────────── */
+    .pinned {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: clamp(22px, 4vw, 36px);
+    }
+    .pinned h2 a:hover { color: var(--accent); }
+    .pinned .dek { color: var(--muted); margin: 12px 0 0; max-width: 60ch; }
+    .pinned-meta { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-sm); margin-top: 20px; }
+
+    /* ─── лента: три структуры записей ──────────────────────────────── */
+    .log-row {
+      display: grid; grid-template-columns: 112px 1fr 150px;
+      gap: var(--gap-lg); padding: 24px 0;
+      border-top: 1px solid var(--border);
+      align-items: baseline;
+    }
+    .log-row:first-of-type { border-top: 0; }
+    .log-row h3 { font-size: 18px; }
+    .log-row h3 a:hover { color: var(--accent); }
+    .log-row .dek { margin: 6px 0 0; color: var(--muted); font-size: 14px; max-width: 62ch; }
+    .log-row .pull { text-align: right; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+    @media (max-width: 920px) {
+      .log-row { grid-template-columns: 1fr; gap: 8px; padding: 20px 0; }
+      .log-row .pull { flex-direction: row; align-items: center; text-align: left; order: -1; justify-content: space-between; width: 100%; }
+    }
+    .thumb-strip { display: flex; gap: 8px; margin-top: 12px; }
+    .thumb-strip .ph-img { width: 64px; aspect-ratio: 1 / 1; font-size: 0; border-radius: var(--radius); }
+    .doc-chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 12px; padding: 8px 12px;
+      border: 1px solid var(--border); background: var(--surface);
+      border-radius: var(--radius);
+      font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+    }
+    .doc-chip svg { width: 14px; height: 14px; flex: none; }
+
+    /* ─── gallery strip ─────────────────────────────────────────────── */
+    .gallery-strip { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--gap-sm); }
+    @media (max-width: 920px) { .gallery-strip { grid-template-columns: repeat(2, 1fr); } }
+    .gallery-strip a:hover .ph-img { border-color: var(--accent); }
+
+    /* ─── author ────────────────────────────────────────────────────── */
+    .author-photo { width: 100%; max-width: 260px; aspect-ratio: 1/1; object-fit: cover; border-radius: var(--radius-lg); border: 1px solid var(--border); }
+    @media (max-width: 920px) { .author-photo { max-width: 180px; } }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#content">Перейти к содержанию</a>
+
+  <header class="topnav" data-od-id="topnav">
+    <div class="container">
+      <div class="topnav-inner">
+        <a href="redesign-home-v2.html" class="logo" data-od-id="logo">Мир Якоба</a>
+        <nav data-od-id="nav-desktop">
+          <a href="redesign-home-v2.html" aria-current="page">Главная</a>
+          <a href="#gallery">Галерея</a>
+          <a href="#author">Мои работы</a>
+          <a href="#posts">Поиск</a>
+          <a href="#author" class="btn btn-secondary" style="min-height:40px; padding: 8px 16px;" data-od-id="nav-login">Войти</a>
+        </nav>
+        <button class="nav-toggle" id="navToggle" aria-expanded="false" aria-controls="mobileNav" data-od-id="nav-toggle">
+          Меню
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </div>
+      <div class="mobile-nav" id="mobileNav" data-od-id="nav-mobile">
+        <a href="redesign-home-v2.html">Главная</a>
+        <a href="#gallery">Галерея</a>
+        <a href="#author">Мои работы</a>
+        <a href="#posts">Поиск</a>
+        <a href="#author" style="border-bottom:0; font-weight:600;">Войти</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="content">
+
+    <!-- Шапка с тёплым светом -->
+    <section class="hero" data-od-id="hero">
+      <div class="container hero-inner">
+        <img class="hero-avatar" src="static/avatar.jpg" alt="Якоб — автор блога" data-od-id="hero-avatar" />
+        <h1 data-od-id="hero-title">Дневник Якоба: заметки, фото и работы</h1>
+        <p class="lead" data-od-id="hero-lead">Пишу о том, что делаю руками и головой. Часть записей открыта всем, остальное только для своих: вход по коду из Telegram, без пароля.</p>
+      </div>
+    </section>
+
+    <!-- Закреплённая запись -->
+    <section class="section" style="padding-top: 0; border-top: 0;" data-od-id="pinned">
+      <div class="container">
+        <article class="pinned" data-od-id="pinned-card">
+          <p class="kicker kicker-accent" style="margin-bottom: 12px;">Закреплено · Новости блога</p>
+          <h2><a href="redesign-post-v2.html" data-od-id="pinned-title">Уровни, XP и достижения: зачем блогу игровая механика</a></h2>
+          <p class="dek" data-od-id="pinned-dek">Читатели получают опыт за комментарии и время на сайте, а бот присылает карточки достижений прямо в Telegram. Как это устроено и почему я вдвое снизил пороги уровней.</p>
+          <div class="pinned-meta">
+            <span class="meta num">12 июля 2026</span>
+            <span class="meta">·</span>
+            <span class="meta">7 мин чтения</span>
+            <a class="btn btn-ghost btn-arrow" href="redesign-post-v2.html" data-od-id="pinned-cta">Читать</a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Лента записей: три структуры -->
+    <section class="section" id="posts" data-od-id="posts-log">
+      <div class="container">
+        <div class="row-between" style="margin-bottom: 20px;">
+          <h2>Свежие записи</h2>
+          <a class="btn btn-ghost btn-arrow" href="#posts" data-od-id="posts-all">Весь архив</a>
+        </div>
+        <div>
+          <article class="log-row" data-od-id="post-row-sketchbook-photos">
+            <span class="meta num">06.07.2026</span>
+            <div>
+              <h3><a href="redesign-post-v2.html">Июньский скетчбук: развороты и поля</a></h3>
+              <p class="dek">Восемь разворотов за месяц: тушь, немного акварели и заметки на полях, которые стыдно и приятно перечитывать.</p>
+              <div class="thumb-strip" aria-label="Три фотографии из записи">
+                <div class="ph-img" role="img" aria-label="Разворот скетчбука, тушь"></div>
+                <div class="ph-img" role="img" aria-label="Разворот скетчбука, акварель"></div>
+                <div class="ph-img" role="img" aria-label="Заметки на полях"></div>
+              </div>
+            </div>
+            <span class="pull"><span class="tag">Фото</span><span class="meta num">183 просмотра</span></span>
+          </article>
+          <article class="log-row" data-od-id="post-row-poster-portfolio">
+            <span class="meta num">28.06.2026</span>
+            <div>
+              <h3><a href="redesign-post-v2.html">Портфолио плакатов — первая редакция</a></h3>
+              <p class="dek">Собрал двенадцать работ за два года в один документ: можно листать прямо в посте или скачать.</p>
+              <span class="doc-chip">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 3H7a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V7z"/><path d="M14 3v4h4"/></svg>
+                PDF · 12 страниц
+              </span>
+            </div>
+            <span class="pull"><span class="tag">Работа</span><span class="meta num">96 просмотров</span></span>
+          </article>
+          <article class="log-row" data-od-id="post-row-slow-reading">
+            <span class="meta num">19.06.2026</span>
+            <div>
+              <h3><a href="redesign-post-v2.html">О медленном чтении</a></h3>
+              <p class="dek">Что происходит, когда перестаёшь считать прочитанные книги и начинаешь их конспектировать от руки.</p>
+            </div>
+            <span class="pull"><span class="tag">Заметка</span><span class="meta num">327 просмотров</span></span>
+          </article>
+          <article class="log-row" data-od-id="post-row-voice-note">
+            <span class="meta num">11.06.2026</span>
+            <div>
+              <h3><a href="redesign-post-v2.html">Голосовая заметка превращается в пост</a></h3>
+              <p class="dek">Отправляю боту голосовое, а расшифровка сама ложится черновиком в админку. Запись доступна зарегистрированным читателям.</p>
+            </div>
+            <span class="pull"><span class="tag">Для своих</span><span class="meta num">74 просмотра</span></span>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- Галерея -->
+    <section class="section" id="gallery" data-od-id="gallery">
+      <div class="container">
+        <div class="row-between" style="margin-bottom: 20px;">
+          <h2>Последние работы</h2>
+          <a class="btn btn-ghost btn-arrow" href="#gallery" data-od-id="gallery-all">Открыть галерею</a>
+        </div>
+        <div class="gallery-strip">
+          <a href="#gallery" data-od-id="gallery-item-1"><div class="ph-img square">[ Тушь · лист 08 ]</div></a>
+          <a href="#gallery" data-od-id="gallery-item-2"><div class="ph-img square">[ Тушь · лист 14 ]</div></a>
+          <a href="#gallery" data-od-id="gallery-item-3"><div class="ph-img square">[ Акварель · этюд ]</div></a>
+          <a href="#gallery" data-od-id="gallery-item-4"><div class="ph-img square">[ Скетчбук · разворот ]</div></a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Автор + вход -->
+    <section class="section" id="author" data-od-id="author">
+      <div class="container grid-1-2">
+        <img class="author-photo" src="static/avatar.jpg" alt="Якоб — автор блога" data-od-id="author-photo" />
+        <div>
+          <p class="kicker">Об авторе</p>
+          <h2 style="max-width: 24ch;">Читайте со своего уровня</h2>
+          <p class="lead" style="margin-top: 14px;">За комментарии и чтение начисляется опыт, бот присылает карточки достижений, а команда /level показывает, сколько осталось до следующего уровня. Вход занимает полминуты.</p>
+          <div class="row" style="margin-top: 26px; flex-wrap: wrap;">
+            <a class="btn btn-primary" href="#author" data-od-id="author-login-cta">Войти через Telegram</a>
+            <a class="btn btn-ghost btn-arrow" href="#gallery" data-od-id="author-works-link">Мои работы</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="pagefoot" data-od-id="footer">
+    <div class="container">
+      <div class="row-between">
+        <div>
+          <span style="font-family: var(--font-display); font-size: 14px; font-weight: 700; color: var(--fg);">Мир Якоба</span>
+          <p style="margin: 6px 0 0;">Творчество, мысли и код</p>
+        </div>
+        <nav class="row" style="gap: 24px; flex-wrap: wrap;">
+          <a href="redesign-home-v2.html">Главная</a>
+          <a href="#gallery">Галерея</a>
+          <a href="#author">Мои работы</a>
+          <a href="#posts">Поиск</a>
+        </nav>
+      </div>
+      <p class="meta" style="margin-top: 32px;">© 2026 Мир Якоба · вход по коду из Telegram, без паролей</p>
+    </div>
+  </footer>
+
+  <script>
+    // Mobile menu
+    (function () {
+      var toggle = document.getElementById('navToggle');
+      var menu = document.getElementById('mobileNav');
+      toggle.addEventListener('click', function () {
+        var open = menu.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      });
+      menu.addEventListener('click', function (e) {
+        if (e.target.tagName === 'A') {
+          menu.classList.remove('open');
+          toggle.setAttribute('aria-expanded', 'false');
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
